@@ -1,0 +1,48 @@
+@startuml
+title Vehicle Evidence Layer | System Boundary
+left to right direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam ArrowColor #4F5D75
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+component "Configured sources\nRuntime / hardware / S-CORE" as sources #ECECEC
+component "Interface configuration\nInput / mapping / output" as config #ECECEC
+
+package "Vehicle Evidence Layer" as vel {
+  component "Source Collectors" as collectors
+  component "Evidence Processing\nValidate / normalize / quality / provenance" as processing #FFF1E9
+  component "Evidence Publisher" as publisher
+  component "Evidence Persistence\nOptional" as persistence #ECECEC
+  component "VEL Health" as health
+  component "Operational Logging" as logging
+}
+
+component "Designated consumers" as consumers #ECECEC
+
+sources --> collectors : source records
+collectors --> processing : collected data
+processing --> publisher : Vehicle Evidence
+publisher --> consumers : configured interface
+config ..> vel : input / mapping / output contracts
+processing ..> persistence : only if configured
+collectors ..> health : collection status
+processing ..> health : processing status
+processing ..> logging : operational events
+
+note bottom of consumers
+Evidence is input to external decisions;
+VEL does not make OEM decisions or control hardware.
+end note
+@enduml

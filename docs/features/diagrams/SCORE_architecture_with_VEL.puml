@@ -1,33 +1,47 @@
 @startuml
-title S-CORE Integration View with Vehicle Evidence Layer
+title Vehicle Evidence Layer | S-CORE Integration
+left to right direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam ArrowColor #4F5D75
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
 
-package "S-CORE" {
-  [S-CORE Modules]
-  [S-CORE Communication]
-  [S-CORE Logging]
-  [S-CORE Persistency]
+package "S-CORE state access" {
+  component "S-CORE Module APIs" as module_api #ECECEC
+  component "S-CORE Communication" as communication #ECECEC
 }
 
 package "Vehicle Evidence Layer" {
-  [Source Collectors]
-  [Evidence Processing]
-  [Evidence Persistence]
-  [Vehicle Evidence Publisher]
-  [VEL Health Publisher]
-  [Collection and Audit Logging]
+  component "Source Collectors" as collectors
+  component "Evidence Processing" as processing #FFF1E9
+  component "Vehicle Evidence Publisher" as publisher
+  component "Collection and Audit Logging" as logging
+  component "Evidence Persistence\nOptional" as persistence #FFF1E9
 }
 
-[S-CORE Modules] --> [Source Collectors] : exposed module states
-[Source Collectors] --> [Evidence Processing] : collected records
-[Evidence Processing] ..> [S-CORE Communication] : applicable communication profile
-[Evidence Processing] ..> [S-CORE Persistency] : configured evidence persistence
-[Evidence Processing] --> [Evidence Persistence] : optional storage
-[Evidence Processing] --> [Vehicle Evidence Publisher] : normalized evidence
-[Evidence Processing] --> [VEL Health Publisher] : collection status
-[Collection and Audit Logging] --> [S-CORE Logging] : collection/audit logs
+package "S-CORE operational services" {
+  component "S-CORE Logging" as score_logging #ECECEC
+  component "S-CORE Persistency" as score_store #ECECEC
+}
 
-note bottom of [Vehicle Evidence Publisher]
-Vehicle Evidence Layer exposes evidence only.
-No control or final OEM decisions.
-end note
+module_api --> collectors : observable module state
+collectors --> processing : collected records
+processing --> publisher : normalized Vehicle Evidence
+collectors ..> communication : when module API uses it
+collectors --> logging : collection events
+processing --> logging : operational events
+logging --> score_logging : collection / audit logs
+processing ..> persistence : only if configured
+persistence ..> score_store : configured storage
 @enduml

@@ -1,69 +1,39 @@
 @startuml
-title VEL Internal Component Flow
+title Vehicle Evidence Layer | Record Processing
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam activityBorderColor #2D3142
+skinparam activityBackgroundColor #FFFFFF
+skinparam activityFontColor #2D3142
+skinparam diamondBorderColor #4F5D75
+skinparam diamondBackgroundColor #ECECEC
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
 
-rectangle "Raw Source Record" as raw_record
-rectangle "Validated Source Record" as valid_record
-rectangle "Normalized Evidence Record" as evidence_record
-rectangle "Rejected / Diagnostic Result" as diagnostic
+start
+:Collect configured source record;
+:Validate against input definition;
+if (Valid source record?) then (yes)
+  #FFF1E9:Normalize using configured mapping;
+  :Attach quality to record or batch;
+  :Add source identity and observation time;
+  if (Correlation supplied?) then (yes)
+    :Preserve correlation identifier;
+  endif
+  :Publish through configured evidence interface;
+  if (Persistence configured?) then (yes)
+    :Store normalized evidence;
+  endif
+else (no)
+  :Reject and report diagnostic;
+endif
+:Report VEL health and operational logs;
+stop
 
-package "Configuration" {
-	rectangle "Input Definitions" as input_def
-	rectangle "Normalization Mappings" as mappings
-	rectangle "Output Definitions" as output_def
-}
-
-package "Processing Path" {
-	component "Source Collectors" as collectors
-	component "Schema Validator" as validator
-	component "Normalization Processor" as normalizer
-	component "Quality Evaluator" as quality
-	component "Traceability Enricher" as traceability
-}
-
-package "Outputs" {
-	component "Vehicle Evidence Publisher" as publisher
-	component "Evidence Persistence" as persistence
-	component "VEL Health Publisher" as health
-}
-
-component "Collection and Audit Logging" as logging
-
-input_def --> collectors : source contract
-collectors --> raw_record : collect
-raw_record --> validator : validate
-input_def --> validator : schema
-validator --> valid_record : valid
-validator --> diagnostic : invalid
-valid_record --> normalizer : transform
-mappings --> normalizer : mapping rules
-normalizer --> quality : evaluate
-quality --> traceability : quality metadata
-traceability --> evidence_record : add provenance
-output_def --> publisher : output contract
-evidence_record --> publisher : publish
-evidence_record --> persistence : optional store
-collectors --> health : collection status
-validator --> health : validation status
-normalizer --> health : processing status
-
-collectors --> logging : collection events
-validator --> logging : validation events
-normalizer --> logging : transformation events
-publisher --> logging : publication events
-
-note right of evidence_record
-Contains normalized value/state,
-source identity, observation time,
-and supplied correlation information.
-end note
-
-note bottom of diagnostic
-Invalid source data does not enter
-the normalized evidence path.
-end note
-
-note bottom of health
-VEL Health is operational status,
-not Vehicle Evidence content.
+note right
+Health and logs describe the pipeline;
+neither is an OEM decision or control action.
 end note
 @enduml

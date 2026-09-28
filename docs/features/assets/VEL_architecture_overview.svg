@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="418px" preserveAspectRatio="none" style="width:1917px;height:418px;background:#F5F5F5;" version="1.1" viewBox="0 0 1917 418" width="1917px" zoomAndPan="magnify"><defs/><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacing" textLength="344" x="780" y="20.7686">Vehicle Evidence Layer | System Boundary</text><!--MD5=[a70e8ed327cebcd5de85907aeab9aee3]
+cluster vel--><path d="M471,30.7236 L633,30.7236 A6,6 0 0 1 637,34.7236 L644,55.9531 L1391,55.9531 A4,4 0 0 1 1395,59.9531 L1395,386.7236 A4,4 0 0 1 1391,390.7236 L471,390.7236 A4,4 0 0 1 467,386.7236 L467,34.7236 A4,4 0 0 1 471,30.7236 " fill="#ECECEC" style="stroke:#7A8399;stroke-width:1.5;"/><line style="stroke:#7A8399;stroke-width:1.5;" x1="467" x2="644" y1="55.9531" y2="55.9531"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="164" x="471" y="48.877">Vehicle Evidence Layer</text><!--MD5=[2ec85851807f7127eb3912622b09cb2e]
+entity collectors--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="132" x="491" y="108.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="501" y="134.377">Source Collectors</text><!--MD5=[ab41892418975ef978a1a58d7f1fcb2a]
+entity processing--><rect fill="#FFF1E9" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="283" x="766" y="166.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="132" x="776" y="192.877">Evidence Processing</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="263" x="776" y="212.1064">Validate / normalize / quality / provenance</text><!--MD5=[1fe25e6ad2a661c9f8478b5f50e2a15d]
+entity publisher--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="141" x="1222.5" y="245.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="121" x="1232.5" y="271.377">Evidence Publisher</text><!--MD5=[c41e46d883680b688171592e8ab5fcf6]
+entity persistence--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="156" x="1215" y="151.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="136" x="1225" y="177.877">Evidence Persistence</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53" x="1225" y="197.1064">Optional</text><!--MD5=[e81139bc891c5ede688a4fa856c2e3de]
+entity health--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="90" x="1248" y="77.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70" x="1258" y="103.377">VEL Health</text><!--MD5=[e3b0e2294a7d8d4f01b56765b435c024]
+entity logging--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="149" x="1218.5" y="319.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="129" x="1228.5" y="345.377">Operational Logging</text><!--MD5=[503130fef546779811418e5f39df21ee]
+entity sources--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="209" x="7" y="98.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124" x="17" y="124.877">Configured sources</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="189" x="17" y="144.1064">Runtime / hardware / S-CORE</text><!--MD5=[caf660ac2a54b55a5c31b5515889e628]
+entity config--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="169" x="27" y="353.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="141" x="37" y="379.877">Interface configuration</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="149" x="37" y="399.1064">Input / mapping / output</text><!--MD5=[ce10fbef66f8d266a208376726bc9154]
+entity consumers--><rect fill="#ECECEC" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="165" x="1654" y="245.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="145" x="1664" y="271.377">Designated consumers</text><path d="M1563,323.7236 L1563,361.4355 A4,4 0 0 0 1567,365.4355 L1906,365.4355 A4,4 0 0 0 1910,361.4355 L1910,329.7236 L1900,319.7236 L1740.5,319.7236 L1736.5,284.4336 L1732.5,319.7236 L1567,319.7236 A4,4 0 0 0 1563,323.7236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><path d="M1900,319.7236 L1900,327.7236 A2,2 0 0 0 1902,329.7236 L1910,329.7236 L1900,319.7236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="226" x="1569" y="339.7231">Evidence is input to external decisions;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="326" x="1569" y="357.5791">VEL does not make OEM decisions or control hardware.</text><!--MD5=[e36aea679490fbad10d7ebdfd63d393c]
+link sources to collectors--><path d="M216.2,127.7236 C299.07,127.7236 412.99,127.7236 485.57,127.7236 " fill="none" id="sources-to-collectors" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="490.72,127.7236,481.72,123.7236,485.72,127.7236,481.72,131.7236,490.72,127.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="86" x="301.5" y="124.7231">source records</text><!--MD5=[2658102ab367263ba73b04b7876c0ecb]
+link collectors to processing--><path d="M623.14,140.4336 C662,148.0136 712.96,157.9636 760.95,167.3236 " fill="none" id="collectors-to-processing" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="765.88,168.2836,757.8138,162.6324,760.9727,167.3251,756.2801,170.484,765.88,168.2836" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="81" x="654" y="145.7231">collected data</text><!--MD5=[fa706313c2c80d261ed0ef130232576f]
+link processing to publisher--><path d="M1049.12,221.0236 C1106.05,231.2636 1169.46,242.6736 1217.21,251.2636 " fill="none" id="processing-to-publisher" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="1222.37,252.1936,1214.2194,246.6648,1217.4488,251.3092,1212.8044,254.5387,1222.37,252.1936" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="99" x="1082.5" y="225.7231">Vehicle Evidence</text><!--MD5=[92a7ff5c25b61f948eabbd71800cb688]
+link publisher to consumers--><path d="M1363.96,264.7236 C1441.04,264.7236 1565.12,264.7236 1648.44,264.7236 " fill="none" id="publisher-to-consumers" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="1653.87,264.7236,1644.87,260.7236,1648.87,264.7236,1644.87,268.7236,1653.87,264.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="112" x="1420" y="261.7231">configured interface</text><!--MD5=[a42edb65f7f2076bc1c8bbb3edb45956]
+link config to vel--><path d="M196.18,382.7236 C259.435,382.7236 347.59,382.7236 420.81,382.7236 C429.9625,382.7236 438.8816,382.7236 447.4896,382.7236 C451.7936,382.7236 456.0198,382.7236 460.1585,382.7236 C462.2278,382.7236 464.2753,382.7236 466.2997,382.7236 " fill="none" id="config-to-vel" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="466.2997,382.7236,457.2997,378.7236,461.2997,382.7236,457.2997,386.7236,466.2997,382.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="195" x="247" y="379.7231">input / mapping / output contracts</text><!--MD5=[0917d07ae3b753536c580685523cbce0]
+link processing to persistence--><path d="M1049.2,192.6436 C1092.74,191.4236 1140.87,189.8036 1185,187.7236 C1193.01,187.3436 1201.35,186.8936 1209.69,186.4136 " fill="none" id="processing-to-persistence" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="1214.87,186.1036,1205.6559,182.6251,1209.8782,186.3897,1206.1136,190.612,1214.87,186.1036" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="97" x="1083.5" y="184.7231">only if configured</text><!--MD5=[34c7b585893a14a62b40a2f02cbd8f3b]
+link collectors to health--><path d="M623.15,123.4736 C633.14,122.8536 643.35,122.2536 653,121.7236 C842.26,111.3036 889.58,108.3936 1079,101.7236 C1135.13,99.7436 1199.6,98.3536 1242.78,97.5536 " fill="none" id="collectors-to-health" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="1247.93,97.4536,1238.8518,93.6344,1242.931,97.5536,1239.0118,101.6328,1247.93,97.4536" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="95" x="860" y="100.7231">collection status</text><!--MD5=[d0c5d178cdcd40567814a3e812df56c2]
+link processing to health--><path d="M1022.2,166.6536 C1072.16,153.8436 1131.51,138.5936 1185,124.7236 C1203.86,119.8336 1224.58,114.4236 1242.72,109.6736 " fill="none" id="processing-to-health" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="1247.76,108.3536,1238.0393,106.7701,1242.9239,109.6233,1240.0707,114.5079,1247.76,108.3536" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="103" x="1080.5" y="121.7231">processing status</text><!--MD5=[93ad4690945e2928d740fa6a5315cd00]
+link processing to logging--><path d="M969.35,224.8836 C1001.57,239.8036 1042.02,257.7236 1079,271.7236 C1124.46,288.9436 1176.49,305.3636 1217.75,317.6436 " fill="none" id="processing-to-logging" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="1222.73,319.1236,1215.2326,312.737,1217.935,317.7066,1212.9654,320.409,1222.73,319.1236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="104" x="1080" y="268.7231">operational events</text><!--MD5=[d1b5601f05626a95891c5a3e0094c79e]
+@startuml
+title Vehicle Evidence Layer | System Boundary
+left to right direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam ArrowColor #4F5D75
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+component "Configured sources\nRuntime / hardware / S-CORE" as sources #ECECEC
+component "Interface configuration\nInput / mapping / output" as config #ECECEC
+
+package "Vehicle Evidence Layer" as vel {
+  component "Source Collectors" as collectors
+  component "Evidence Processing\nValidate / normalize / quality / provenance" as processing #FFF1E9
+  component "Evidence Publisher" as publisher
+  component "Evidence Persistence\nOptional" as persistence #ECECEC
+  component "VEL Health" as health
+  component "Operational Logging" as logging
+}
+
+component "Designated consumers" as consumers #ECECEC
+
+sources - -> collectors : source records
+collectors - -> processing : collected data
+processing - -> publisher : Vehicle Evidence
+publisher - -> consumers : configured interface
+config ..> vel : input / mapping / output contracts
+processing ..> persistence : only if configured
+collectors ..> health : collection status
+processing ..> health : processing status
+processing ..> logging : operational events
+
+note bottom of consumers
+Evidence is input to external decisions;
+VEL does not make OEM decisions or control hardware.
+end note
+@enduml
+
+PlantUML version 1.2021.16(Thu Dec 09 02:25:22 KST 2021)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) Client VM
+Default Encoding: MS949
+Language: ko
+Country: KR
+--></g></svg>
