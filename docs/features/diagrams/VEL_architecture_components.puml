@@ -1,0 +1,69 @@
+@startuml
+title Vehicle Evidence Layer | Component Handoffs
+top to bottom direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam ArrowColor #4F5D75
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+component "Configured sources\n(runtime / hardware / S-CORE)" as sources #ECECEC
+
+package "Configuration (supplied to VEL)" {
+	component "Input Interface\nDefinitions" as input #ECECEC
+	component "Normalization\nMappings" as mapping #ECECEC
+	component "Output Evidence\nDefinitions" as output #ECECEC
+}
+
+package "Vehicle Evidence Layer" {
+	component "Source Collectors" as collectors
+	component "Schema Validator" as validator
+	component "Normalization Processor" as normalizer #FFF1E9
+	component "Quality Evaluator" as quality
+	component "Traceability Enricher" as traceability
+	component "Vehicle Evidence Publisher" as publisher
+
+	component "Evidence Persistence\n(optional)" as persistence #ECECEC
+	component "VEL Health Publisher" as health
+	component "Collection and Audit Logging" as logging
+}
+
+component "Designated consumer" as consumer #ECECEC
+
+sources --> collectors : source data
+input ..> collectors : source contract
+input ..> validator : validation schema
+collectors --> validator : source record + context
+validator --> normalizer : validated source record
+mapping ..> normalizer : conversion rules
+normalizer --> quality : normalized observation
+quality --> traceability : observation + quality
+traceability --> publisher : evidence record + provenance
+publisher --> consumer : Vehicle Evidence
+output ..> publisher : output contract
+traceability ..> persistence : evidence record, if configured
+collectors ..> health : collection status
+normalizer ..> health : processing status
+collectors ..> logging : collection events
+publisher ..> logging : publication events
+
+note right of validator
+Invalid record -> diagnostic result.
+Validation status -> VEL Health;
+validation event -> audit log.
+end note
+
+note right of normalizer
+Transformation events -> audit log.
+end note
+@enduml

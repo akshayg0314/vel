@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="337px" preserveAspectRatio="none" style="width:1001px;height:337px;background:#F5F5F5;" version="1.1" viewBox="0 0 1001 337" width="1001px" zoomAndPan="magnify"><defs/><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacing" textLength="345" x="321.5" y="20.7686">Vehicle Evidence Layer | Evidence Content</text><!--MD5=[52d4850b74f397f5b82669e3ce908784]
+cluster Vehicle Evidence output--><path d="M773,47.7236 L943,47.7236 A6,6 0 0 1 947,51.7236 L954,72.9531 L990,72.9531 A4,4 0 0 1 994,76.9531 L994,326.7236 A4,4 0 0 1 990,330.7236 L773,330.7236 A4,4 0 0 1 769,326.7236 L769,51.7236 A4,4 0 0 1 773,47.7236 " fill="#ECECEC" style="stroke:#7A8399;stroke-width:1.5;"/><line style="stroke:#7A8399;stroke-width:1.5;" x1="769" x2="954" y1="72.9531" y2="72.9531"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="172" x="773" y="65.877">Vehicle Evidence output</text><!--MD5=[31c65988e6b88005c19c6d437dad5ea7]
+entity record--><rect fill="#FFF1E9" height="135.377" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="185" x="789" y="86.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="103" x="799" y="112.377">Evidence record</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="0" x="803" y="131.6064"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="147" x="799" y="150.8359">Normalized observation</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="94" x="799" y="170.0654">Source identity</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="145" x="799" y="189.2949">Observation timestamp</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="165" x="799" y="208.5244">Correlation ID (if supplied)</text><!--MD5=[ce5156c81fb746a63f97a02453ea399d]
+entity quality--><rect fill="#FFFFFF" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="193" x="785" y="256.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="103" x="795" y="282.877">Evidence quality</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="173" x="795" y="302.1064">Attached to record or batch</text><!--MD5=[c249f364d83a401275c0ae35335e5f45]
+entity source--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="137" x="54.5" y="124.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117" x="64.5" y="150.877">Configured source</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74" x="64.5" y="170.1064">observation</text><!--MD5=[afe45a2ff804174a830a79062b61aa55]
+entity mapping--><rect fill="#FFFFFF" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="161" x="410" y="124.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70" x="420" y="150.877">Configured</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="141" x="420" y="170.1064">normalization mapping</text><!--MD5=[e81139bc891c5ede688a4fa856c2e3de]
+entity health--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="173" x="404" y="31.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70" x="414" y="57.877">VEL Health</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="153" x="414" y="77.1064">Separate pipeline status</text><!--MD5=[716e37c7f479e551e628cce845b53fb8]
+entity pipeline_status--><rect fill="#ECECEC" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="232" x="7" y="41.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="212" x="17" y="67.377">VEL collection / processing status</text><!--MD5=[b64282b6dad0329057398129ea87d8a6]
+link source to mapping--><path d="M191.89,153.7236 C252.05,153.7236 340.14,153.7236 404.87,153.7236 " fill="none" id="source-to-mapping" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="409.88,153.7236,400.88,149.7236,404.88,153.7236,400.88,157.7236,409.88,153.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="68" x="287.5" y="150.7231">source data</text><!--MD5=[1e652fd67299f79068cb47022eefc657]
+link mapping to record--><path d="M571.16,153.7236 C632.68,153.7236 718.09,153.7236 783.58,153.7236 " fill="none" id="mapping-to-record" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="788.66,153.7236,779.66,149.7236,783.66,153.7236,779.66,157.7236,788.66,153.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="144" x="608" y="150.7231">normalized value or state</text><!--MD5=[3cf5cac6b32766ed19c99137e6811f13]
+link pipeline_status to health--><path d="M239.14,60.7236 C290.63,60.7236 350.44,60.7236 398.69,60.7236 " fill="none" id="pipeline_status-to-health" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="403.92,60.7236,394.92,56.7236,398.92,60.7236,394.92,64.7236,403.92,60.7236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="103" x="270" y="57.7231">operational status</text><!--MD5=[97f985b6363b991bc0660acd6dc364c2]
+@startuml
+title Vehicle Evidence Layer | Evidence Content
+left to right direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam ArrowColor #4F5D75
+
+rectangle "Configured source\nobservation" as source #ECECEC
+rectangle "Configured\nnormalization mapping" as mapping
+
+package "Vehicle Evidence output" {
+  rectangle "Evidence record\n\nNormalized observation\nSource identity\nObservation timestamp\nCorrelation ID (if supplied)" as record #FFF1E9
+  rectangle "Evidence quality\nAttached to record or batch" as quality
+}
+
+rectangle "VEL Health\nSeparate pipeline status" as health #ECECEC
+rectangle "VEL collection / processing status" as pipeline_status #ECECEC
+
+source - -> mapping : source data
+mapping - -> record : normalized value or state
+pipeline_status - -> health : operational status
+@enduml
+
+PlantUML version 1.2021.16(Thu Dec 09 02:25:22 KST 2021)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) Client VM
+Default Encoding: MS949
+Language: ko
+Country: KR
+--></g></svg>

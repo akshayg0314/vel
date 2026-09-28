@@ -10,9 +10,17 @@ VEL은 evidence producer다. VEL은 multi-node coordination, boot sequence, work
 
 ## 2. 아키텍처 개요
 
-![Vehicle Evidence Layer 아키텍처](../features/assets/VEL_architecture.svg)
+개요도는 Vehicle Evidence Layer의 경계를 보여준다. 구성된 source와 interface configuration이 VEL에 입력되고, VEL은 지정된 consumer에게 Vehicle Evidence를 노출한다. 선택적 persistence와 운영 상태 출력은 OEM 의사결정 및 제어와 분리된다.
 
-[PlantUML 원본](../features/diagrams/VEL_architecture.puml)
+![Vehicle Evidence Layer 시스템 개요](../features/assets/VEL_architecture_overview.svg)
+
+[개요 PlantUML 원본](../features/diagrams/VEL_architecture_overview.puml)
+
+컴포넌트 그림은 수집, 처리, 발행, 선택적 저장, health 및 logging을 Vehicle Evidence Layer 경계 안에 배치하고, 구성된 source, 제공되는 interface definition 및 지정된 consumer는 경계 밖에 둔다. 화살표에는 컴포넌트 간 전달되는 data 또는 configuration을 표시하며, 아래의 내부 처리 순서도는 처리 순서와 실패 분기를 별도로 설명한다. 각 컴포넌트를 별도 process 또는 배포 단위로 고정하지 않는다. 선택적 persistence는 evidence record를 받지만, Publisher가 저장된 evidence를 다시 조회할지는 미결 연계 사항이며 필수 경로가 아니다.
+
+![Vehicle Evidence Layer 기능 컴포넌트](../features/assets/VEL_architecture_components.svg)
+
+[컴포넌트 PlantUML 원본](../features/diagrams/VEL_architecture_components.puml)
 
 Vehicle Evidence Layer는 다음 다섯 기능 영역으로 구성된다.
 
@@ -32,6 +40,8 @@ Configuration은 source와 evidence contract를 정의한다.
 
 이를 통해 새로운 source를 추가할 때 common evidence processing behavior를 변경하지 않고 configuration과 platform-specific collector를 확장할 수 있다.
 
+Output Evidence Definition은 담당 data-format 이해관계자와 합의한 aggregation data format을 담는다(FR-VEL-016). Vehicle Evidence Publisher는 구성된 output contract에 따라 evidence를 노출한다. 이는 별도의 aggregation 또는 multi-node coordination 컴포넌트를 뜻하지 않는다. format은 합의 전까지 미결 설계 항목이다.
+
 ## 4. 컴포넌트 책임
 
 | 컴포넌트 | 책임 | 경계 |
@@ -46,16 +56,20 @@ Configuration은 source와 evidence contract를 정의한다.
 | VEL Health Publisher | collection 및 processing health를 노출한다 | VEL operational status만 담당한다 |
 | Collection and Audit Logging | operational 및 audit event를 기록한다 | evidence content와 분리된다 |
 
+Vehicle Evidence Publisher에서 지정된 consumer로 이어지는 경계에서 VEL은 배포 환경이 선택한 security mechanism과 consumer access rule을 적용한다(SEC-VEL-001, SEC-VEL-004). authentication이 필요한 경우 배포 환경이 제공한 caller identity를 사용하고(SEC-VEL-003), 선택된 integrity method를 지원한다(SEC-VEL-005). VEL은 자체 authentication authority를 정의하거나 운영하지 않는다(SEC-VEL-002). 배포 환경별 mechanism과 transport는 여기서 확정하지 않는다.
+
 ## 5. S-CORE 연계
 
 ![S-CORE integration view with Vehicle Evidence Layer](../features/assets/SCORE_architecture_with_VEL.svg)
 
 [PlantUML 원본](../features/diagrams/SCORE_architecture_with_VEL.puml)
 
+이 그림은 컴포넌트 아키텍처의 S-CORE 연계 경계를 상세히 보여주며, 수집→처리→발행 경로는 동일하게 유지한다. Source Collector는 module state를 관측하고, Evidence Processing은 Vehicle Evidence Publisher로 전달할 정규화된 evidence를 생성한다. Collection and Audit Logging은 운영 이벤트를 S-CORE Logging으로 보낸다. S-CORE Communication은 module state의 출처가 아니라 module API에 접근할 때 조건부로 사용하는 수단이다. 필요한지 여부는 배포 환경의 module API 계약이 결정하며, 이 설계는 특정 communication profile이나 state field를 확정하지 않는다. 선택적 evidence 저장에는 S-CORE Persistency를 사용할 수 있다. VEL Health는 여기서 S-CORE service에 직접 의존하지 않으므로 컴포넌트 아키텍처 그림에서 설명한다.
+
 VEL은 다음 경계에서만 S-CORE service를 사용한다.
 
 - S-CORE Modules는 배포 환경이 노출한 API를 통해 관측 가능한 module state를 제공한다.
-- 적용 가능한 communication profile이 요구하는 경우 S-CORE Communication을 사용할 수 있다.
+- 배포된 module API가 S-CORE Communication을 사용하는 경우에만 Source Collector가 이를 사용한다.
 - S-CORE Logging은 VEL collection 및 audit log를 수신한다.
 - 구성된 evidence persistence가 필요한 경우 S-CORE Persistency를 사용할 수 있다.
 
@@ -80,15 +94,24 @@ source data
 
 Logging은 이 흐름을 관찰하고, configuration은 각 처리 단계가 사용하는 contract와 rule을 제공한다.
 
-## 7. Evidence Content Map
+## 7. Vehicle Evidence 내용
 
-![Vehicle Evidence content map](../features/assets/VEL_evidence_state_matrix.svg)
+![Vehicle Evidence record 내용과 별도의 VEL Health](../features/assets/VEL_evidence_record_content.svg)
 
-[PlantUML 원본](../features/diagrams/VEL_evidence_state_matrix.puml)
+[PlantUML 원본](../features/diagrams/VEL_evidence_record_content.puml)
 
-이 map은 source category마다 처리 규칙이 달라지는 이유를 설명한다. Runtime metric은 주로 unit과 range를 처리하고, hardware data는 measurement 또는 operational state를 나타낼 수 있다. S-CORE data는 state 기반으로 처리되며, event와 fault는 code 및 severity 처리가 필요하다. Execution context는 identity와 correlation 정보를 제공한다. 출력은 항상 적용 가능한 quality 및 traceability metadata가 포함된 normalized Vehicle Evidence다.
+각 evidence record에는 정규화된 관측값, source identity 및 observation timestamp가 포함된다. source가 correlation identifier를 제공한 경우에는 이를 record에 포함한다. Evidence quality는 각 record 또는 evidence batch에 적용되고, VEL Health는 수집·처리 pipeline의 상태를 별도로 나타낸다. 그림은 논리적 내용을 보여주며 최종 field name이나 output schema를 확정하지 않는다.
 
-map의 하단은 source별 변환과 cross-cutting output을 구분한다. Evidence quality는 관측값의 품질을 설명하고, VEL Health는 VEL pipeline의 상태를 설명하며, publication은 구성된 interface를 통해 normalized output을 노출한다.
+구성된 input definition과 normalization mapping에 따라 source data가 관측값으로 변환된다. 아래는 예시이며 필수 source format이나 고정된 변환 규칙이 아니다.
+
+| Source 예시 | 가능한 구성 기반 처리 | Evidence 관측값 |
+| --- | --- | --- |
+| Runtime metric | source unit 변환 및 range 검증 | 정규화된 숫자와 단위 |
+| Hardware metric 또는 status | measurement 검증 또는 availability state 매핑 | resource measurement 또는 operational state |
+| S-CORE module state | unknown value를 포함한 source state 매핑 | 정규화된 module state |
+| 구성된 event 또는 fault | code 매핑 또는 미등록 원본값 보존 | 유형화된 event 또는 fault 관측값 |
+
+source가 execution context를 제공하면 해당 관측값의 identity 및 correlation 정보에 사용한다. execution context가 반드시 별도 evidence record를 생성하는 것은 아니다. 구성된 output interface는 최종 Vehicle Evidence를 지정된 consumer에게 노출한다.
 
 ## 8. 미결 설계 항목
 

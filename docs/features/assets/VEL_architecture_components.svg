@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1045px" preserveAspectRatio="none" style="width:966px;height:1045px;background:#F5F5F5;" version="1.1" viewBox="0 0 966 1045" width="966px" zoomAndPan="magnify"><defs/><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacing" textLength="372" x="290.5" y="20.7686">Vehicle Evidence Layer | Component Handoffs</text><!--MD5=[bfd4a3f44a4eea3f6e908189ae6cdaf3]
+cluster Configuration (supplied to VEL)--><path d="M264,30.7236 L481,30.7236 A6,6 0 0 1 485,34.7236 L492,55.9531 L698,55.9531 A4,4 0 0 1 702,59.9531 L702,138.7236 A4,4 0 0 1 698,142.7236 L264,142.7236 A4,4 0 0 1 260,138.7236 L260,34.7236 A4,4 0 0 1 264,30.7236 " fill="#ECECEC" style="stroke:#7A8399;stroke-width:1.5;"/><line style="stroke:#7A8399;stroke-width:1.5;" x1="260" x2="492" y1="55.9531" y2="55.9531"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="219" x="264" y="48.877">Configuration (supplied to VEL)</text><!--MD5=[bdc093bd6218c7764e64ce77849bdf1f]
+cluster Vehicle Evidence Layer--><path d="M47,193.7236 L209,193.7236 A6,6 0 0 1 213,197.7236 L220,218.9531 L556,218.9531 A4,4 0 0 1 560,222.9531 L560,1034.7236 A4,4 0 0 1 556,1038.7236 L47,1038.7236 A4,4 0 0 1 43,1034.7236 L43,197.7236 A4,4 0 0 1 47,193.7236 " fill="#ECECEC" style="stroke:#7A8399;stroke-width:1.5;"/><line style="stroke:#7A8399;stroke-width:1.5;" x1="43" x2="220" y1="218.9531" y2="218.9531"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="164" x="47" y="211.877">Vehicle Evidence Layer</text><!--MD5=[fb14c9b1fd95d0c04eeb1a4af9d96e82]
+entity input--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="110" x="276" y="68.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="90" x="286" y="94.877">Input Interface</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="66" x="286" y="114.1064">Definitions</text><!--MD5=[afe45a2ff804174a830a79062b61aa55]
+entity mapping--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="104" x="421" y="68.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="84" x="431" y="94.877">Normalization</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="431" y="114.1064">Mappings</text><!--MD5=[c661d977cad040094ee01910682146de]
+entity output--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="125" x="560.5" y="68.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="105" x="570.5" y="94.877">Output Evidence</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="66" x="570.5" y="114.1064">Definitions</text><!--MD5=[2ec85851807f7127eb3912622b09cb2e]
+entity collectors--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="132" x="69" y="231.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="79" y="257.877">Source Collectors</text><!--MD5=[1eb2508a4033517ed5b6a268eb58d3cd]
+entity validator--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="131" x="273.5" y="362.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="111" x="283.5" y="388.377">Schema Validator</text><!--MD5=[25638d027caa8786505edc5e98109463]
+entity normalizer--><rect fill="#FFF1E9" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="172" x="324" y="492.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152" x="334" y="518.877">Normalization Processor</text><!--MD5=[ce5156c81fb746a63f97a02453ea399d]
+entity quality--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="128" x="416" y="610.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108" x="426" y="636.877">Quality Evaluator</text><!--MD5=[90b93e2f0ff52e38b5337eade2592034]
+entity traceability--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="150" x="296" y="728.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="130" x="306" y="754.877">Traceability Enricher</text><!--MD5=[1fe25e6ad2a661c9f8478b5f50e2a15d]
+entity publisher--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="191" x="337.5" y="856.2236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="171" x="347.5" y="882.377">Vehicle Evidence Publisher</text><!--MD5=[c41e46d883680b688171592e8ab5fcf6]
+entity persistence--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="156" x="130" y="846.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="136" x="140" y="872.877">Evidence Persistence</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="60" x="140" y="892.1064">(optional)</text><!--MD5=[e81139bc891c5ede688a4fa856c2e3de]
+entity health--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="153" x="227.5" y="610.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="133" x="237.5" y="636.877">VEL Health Publisher</text><!--MD5=[e3b0e2294a7d8d4f01b56765b435c024]
+entity logging--><rect fill="#FFFFFF" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="201" x="195.5" y="983.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="181" x="205.5" y="1009.877">Collection and Audit Logging</text><!--MD5=[503130fef546779811418e5f39df21ee]
+entity sources--><rect fill="#ECECEC" height="58.459" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="214" x="7" y="68.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124" x="17" y="94.877">Configured sources</text><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="194" x="17" y="114.1064">(runtime / hardware / S-CORE)</text><!--MD5=[a6e63e5080b6098cbc36e97e7cf20a2e]
+entity consumer--><rect fill="#ECECEC" height="39.2295" rx="4" ry="4" style="stroke:#2D3142;stroke-width:1.5;" width="158" x="576" y="983.7236"/><text fill="#2D3142" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="138" x="586" y="1009.877">Designated consumer</text><path d="M668.5,353.7236 L668.5,377.7236 L404.72,381.7236 L668.5,385.7236 L668.5,409.2915 A4,4 0 0 0 672.5,413.2915 L879.5,413.2915 A4,4 0 0 0 883.5,409.2915 L883.5,359.7236 L873.5,349.7236 L672.5,349.7236 A4,4 0 0 0 668.5,353.7236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><path d="M873.5,349.7236 L873.5,357.7236 A2,2 0 0 0 875.5,359.7236 L883.5,359.7236 L873.5,349.7236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="194" x="674.5" y="369.7231">Invalid record -&gt; diagnostic result.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="187" x="674.5" y="387.5791">Validation status -&gt; VEL Health;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="160" x="674.5" y="405.4351">validation event -&gt; audit log.</text><path d="M739,502.2236 L739,522.0796 A4,4 0 0 0 743,526.0796 L955,526.0796 A4,4 0 0 0 959,522.0796 L959,508.2236 L949,498.2236 L743,498.2236 A4,4 0 0 0 739,502.2236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><path d="M949,498.2236 L949,506.2236 A2,2 0 0 0 951,508.2236 L959,508.2236 L949,498.2236 " fill="#FFFFFF" style="stroke:#BFC0C0;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="199" x="745" y="518.2231">Transformation events -&gt; audit log.</text><!--MD5=[e36aea679490fbad10d7ebdfd63d393c]
+link sources to collectors--><path d="M112.31,126.7936 C111.78,136.8636 111.26,148.2936 111,158.7236 C110.79,167.1636 109.66,169.3836 111,177.7236 C113.71,194.5136 119.72,212.6736 125.06,226.6236 " fill="none" id="sources-to-collectors" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="126.98,231.5536,127.4402,221.7155,125.165,226.8947,119.9859,224.6195,126.98,231.5536" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="68" x="112" y="174.7231">source data</text><!--MD5=[dfc3b04f4d3bb9f91e653f10c0836a6b]
+link input to collectors--><path d="M283.25,126.8636 C269.15,134.8636 253.59,143.3836 239,150.7236 C231.18,154.6636 228.14,153.6536 221,158.7236 C193.62,178.1636 168.05,207.3336 152.03,227.4936 " fill="none" id="input-to-collectors" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="148.76,231.6536,157.4649,227.0467,151.8485,227.7215,151.1736,222.1051,148.76,231.6536" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="90" x="222" y="174.7231">source contract</text><!--MD5=[f859974d54d6208525d300bad13d653f]
+link input to validator--><path d="M331.8,126.7936 C333.37,182.2836 336.86,305.1236 338.33,356.9336 " fill="none" id="input-to-validator" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="338.47,362.0136,342.2113,352.9031,338.3272,357.0157,334.2146,353.1315,338.47,362.0136" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="103" x="336" y="257.7231">validation schema</text><!--MD5=[178f662848d1edc389cd2aa1920de31b]
+link collectors to validator--><path d="M141.37,270.9336 C147.37,286.0036 157.74,306.7336 173,319.7236 C199.97,342.6736 236.33,357.3236 268.14,366.4936 " fill="none" id="collectors-to-validator" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="273.21,367.9236,265.6329,361.6318,268.3976,366.567,263.4623,369.3317,273.21,367.9236" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="138" x="174" y="316.7231">source record + context</text><!--MD5=[9cd5c5d54dd902db1c0e570cb8b43d2d]
+link validator to normalizer--><path d="M333.19,401.4036 C329.02,418.4436 325.76,443.7736 336,462.7236 C341.99,473.8236 351.75,482.7836 362.25,489.8536 " fill="none" id="validator-to-normalizer" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="366.46,492.5636,361.0524,484.3321,362.2541,489.8598,356.7264,491.0615,366.46,492.5636" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133" x="337" y="459.7231">validated source record</text><!--MD5=[71693cd0acce249dc6b58c329b137514]
+link mapping to normalizer--><path d="M476.38,126.9236 C484.87,201.8636 504.36,404.1836 475,462.7236 C469.59,473.5136 460.51,482.5236 450.83,489.7236 " fill="none" id="mapping-to-normalizer" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="446.65,492.7036,456.2966,490.7178,450.7158,489.7934,451.6402,484.2126,446.65,492.7036" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="93" x="491" y="316.7231">conversion rules</text><!--MD5=[b71842c3f3768097f2da3cb97e72368b]
+link normalizer to quality--><path d="M421.25,531.8636 C433.44,552.0736 452.92,584.3536 466.08,606.1436 " fill="none" id="normalizer-to-quality" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="468.78,610.6336,467.5556,600.8612,466.197,606.3525,460.7057,604.9939,468.78,610.6336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="132" x="450" y="577.7231">normalized observation</text><!--MD5=[2770aba88c6a0c3e270e25fefdfd32ca]
+link quality to traceability--><path d="M462.49,649.8636 C443.26,670.3236 412.4,703.1636 391.92,724.9636 " fill="none" id="quality-to-traceability" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="388.47,728.6336,397.5431,724.8024,391.8892,724.9855,391.7061,719.3316,388.47,728.6336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="119" x="433" y="695.7231">observation + quality</text><!--MD5=[a47a6ae868682b49d93b8ed12be6eb89]
+link traceability to publisher--><path d="M380.15,767.7436 C391.14,789.9836 409.58,827.3236 421.52,851.4836 " fill="none" id="traceability-to-publisher" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="423.81,856.1336,423.4131,846.2928,421.5968,851.6501,416.2395,849.8339,423.81,856.1336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="171" x="404" y="813.7231">evidence record + provenance</text><!--MD5=[3f8bbc90857ddd24f53272ac0afd1a18]
+link publisher to consumer--><path d="M465.76,895.2436 C506.25,918.1336 575.02,957.0136 617.57,981.0636 " fill="none" id="publisher-to-consumer" style="stroke:#4F5D75;stroke-width:1.0;"/><polygon fill="#4F5D75" points="622.11,983.6336,616.2551,975.714,617.7609,981.1668,612.3081,982.6726,622.11,983.6336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="99" x="564" y="950.7231">Vehicle Evidence</text><!--MD5=[f5aa8fa52e1844976d77bef2fe11fbda]
+link output to publisher--><path d="M620.62,126.9036 C618.26,157.3036 615,207.1636 615,250.2236 C615,250.2236 615,250.2236 615,749.2236 C615,782.2336 608.08,794.1336 584,816.7236 C566.03,833.5836 542.63,845.7036 519.64,854.3436 " fill="none" id="output-to-publisher" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="514.75,856.1336,524.5758,856.8075,519.4473,854.4203,521.8345,849.2919,514.75,856.1336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="87" x="616" y="518.7231">output contract</text><!--MD5=[a9832ce813084c69b56fb85282186182]
+link traceability to persistence--><path d="M295.91,756.3836 C267.83,762.9036 238.14,775.0936 219,797.7236 C208.98,809.5736 205.74,826.2936 205.21,841.1236 " fill="none" id="traceability-to-persistence" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="205.13,846.4936,209.2582,837.5517,205.2014,841.4941,201.259,837.4374,205.13,846.4936" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="167" x="220" y="813.7231">evidence record, if configured</text><!--MD5=[34c7b585893a14a62b40a2f02cbd8f3b]
+link collectors to health--><path d="M137.54,270.9036 C139.72,284.6536 143.42,303.6736 149,319.7236 C188.06,432.1336 259.43,555.8236 289.76,606.0836 " fill="none" id="collectors-to-health" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="292.39,610.4336,291.1511,600.663,289.8007,606.1563,284.3074,604.8059,292.39,610.4336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="95" x="210" y="459.7231">collection status</text><!--MD5=[0df1f18e95f378fbf8870745c5be0ffa]
+link normalizer to health--><path d="M365.14,531.8436 C351.35,539.3936 337.14,549.3136 327,561.7236 C316.74,574.2736 310.96,591.6436 307.76,605.6136 " fill="none" id="normalizer-to-health" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="306.69,610.5936,312.4806,602.6269,307.7337,605.7038,304.6569,600.9569,306.69,610.5936" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="103" x="328" y="577.7231">processing status</text><!--MD5=[a40afa883eda78f36e38a6777add85d7]
+link collectors to logging--><path d="M125.08,270.7836 C112.94,295.2536 94,339.9736 94,380.7236 C94,380.7236 94,380.7236 94,876.7236 C94,932.6336 150.52,964.5036 203.76,982.1336 " fill="none" id="collectors-to-logging" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="208.57,983.6936,201.243,977.1122,203.8139,982.1511,198.775,984.722,208.57,983.6936" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="96" x="95" y="636.7231">collection events</text><!--MD5=[ef293b5e1190b9ca76aff725ddf1b0cb]
+link publisher to logging--><path d="M412.79,895.2436 C388.1,917.8536 346.38,956.0736 320.07,980.1736 " fill="none" id="publisher-to-logging" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#4F5D75" points="316.3,983.6336,325.634,980.4909,319.9822,980.2511,320.222,974.5994,316.3,983.6336" style="stroke:#4F5D75;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="103" x="369" y="950.7231">publication events</text><!--MD5=[abd4161d7a033f42e029904dbfad06e7]
+link normalizer to GMN37--><path d="M455.86,492.6636 C491.54,478.5536 542.7,460.7136 589.5,453.2236 C635.58,445.8436 648.61,444.7636 694.5,453.2236 C740.81,461.7636 791.19,483.5736 821.42,498.1536 " fill="none" id="normalizer-GMN37" style="stroke:#4F5D75;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><!--MD5=[59df5c64de2613609ee81e7134f5d213]
+@startuml
+title Vehicle Evidence Layer | Component Handoffs
+top to bottom direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam ArrowColor #4F5D75
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+component "Configured sources\n(runtime / hardware / S-CORE)" as sources #ECECEC
+
+package "Configuration (supplied to VEL)" {
+	component "Input Interface\nDefinitions" as input #ECECEC
+	component "Normalization\nMappings" as mapping #ECECEC
+	component "Output Evidence\nDefinitions" as output #ECECEC
+}
+
+package "Vehicle Evidence Layer" {
+	component "Source Collectors" as collectors
+	component "Schema Validator" as validator
+	component "Normalization Processor" as normalizer #FFF1E9
+	component "Quality Evaluator" as quality
+	component "Traceability Enricher" as traceability
+	component "Vehicle Evidence Publisher" as publisher
+
+	component "Evidence Persistence\n(optional)" as persistence #ECECEC
+	component "VEL Health Publisher" as health
+	component "Collection and Audit Logging" as logging
+}
+
+component "Designated consumer" as consumer #ECECEC
+
+sources - -> collectors : source data
+input ..> collectors : source contract
+input ..> validator : validation schema
+collectors - -> validator : source record + context
+validator - -> normalizer : validated source record
+mapping ..> normalizer : conversion rules
+normalizer - -> quality : normalized observation
+quality - -> traceability : observation + quality
+traceability - -> publisher : evidence record + provenance
+publisher - -> consumer : Vehicle Evidence
+output ..> publisher : output contract
+traceability ..> persistence : evidence record, if configured
+collectors ..> health : collection status
+normalizer ..> health : processing status
+collectors ..> logging : collection events
+publisher ..> logging : publication events
+
+note right of validator
+Invalid record -> diagnostic result.
+Validation status -> VEL Health;
+validation event -> audit log.
+end note
+
+note right of normalizer
+Transformation events -> audit log.
+end note
+@enduml
+
+PlantUML version 1.2021.16(Thu Dec 09 02:25:22 KST 2021)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) Client VM
+Default Encoding: MS949
+Language: ko
+Country: KR
+--></g></svg>

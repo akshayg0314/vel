@@ -1,0 +1,29 @@
+@startuml
+title Vehicle Evidence Layer | Evidence Content
+left to right direction
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FFFFFF
+skinparam rectangleBorderColor #2D3142
+skinparam rectangleFontColor #2D3142
+skinparam packageBorderColor #7A8399
+skinparam packageBackgroundColor #ECECEC
+skinparam ArrowColor #4F5D75
+
+rectangle "Configured source\nobservation" as source #ECECEC
+rectangle "Configured\nnormalization mapping" as mapping
+
+package "Vehicle Evidence output" {
+  rectangle "Evidence record\n\nNormalized observation\nSource identity\nObservation timestamp\nCorrelation ID (if supplied)" as record #FFF1E9
+  rectangle "Evidence quality\nAttached to record or batch" as quality
+}
+
+rectangle "VEL Health\nSeparate pipeline status" as health #ECECEC
+rectangle "VEL collection / processing status" as pipeline_status #ECECEC
+
+source --> mapping : source data
+mapping --> record : normalized value or state
+pipeline_status --> health : operational status
+@enduml
