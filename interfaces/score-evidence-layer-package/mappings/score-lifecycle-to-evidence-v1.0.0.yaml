@@ -1,0 +1,152 @@
+apiVersion: score.dev/v1alpha1
+kind: EvidenceNormalizationRule
+metadata:
+  name: score-lifecycle-to-evidence
+  version: 1.0.0
+spec:
+  compatibleInputSchemas:
+    - {name: score-lifecycle-state, versionRange: ">=1.0.0 <2.0.0"}
+  outputSchema: {name: score-normalized-evidence, version: 1.0.0}
+  defaults:
+    evidenceDomain: s-core
+    quality: {validity: valid, freshness: current, completeness: complete, mappingQuality: exact}
+    time: {clockDomain: wall-clock}
+    traceability: {inputSchemaVersion: "1.0.0", normalizationRuleVersion: "1.0.0"}
+  commonMappings:
+    - {sourcePath: $.source_id, targetPath: $.identity.sourceId, required: true}
+    - {sourcePath: $.workload_id, targetPath: $.identity.workloadId, required: true}
+    - {sourcePath: $.execution_id, targetPath: $.identity.executionInstanceId, required: true}
+    - {sourcePath: $.resource_id, targetPath: $.identity.resourceId, required: true}
+    - {sourcePath: $.execution_id, targetPath: $.identity.correlationId, required: true}
+    - {sourcePath: $.message_id, targetPath: $.traceability.sourceMessageId, required: true}
+    - sourcePath: $.timestamp_ns
+      targetPath: $.time.eventTimestampNs
+      required: true
+      transform: {operation: timestamp, sourceUnit: ns, clockDomain: wall-clock}
+  evidenceMappings:
+    - id: lifecycle-component-state
+      when: {fieldExists: $.state}
+      output: {evidenceType: s-core.lifecycle.component.state}
+      value:
+        sourcePath: $.state
+        targetPath: $.observation.state
+        transform:
+          operation: enumMap
+          values: {idle: idle, starting: starting, running: running, terminating: terminating, terminated: terminated, failed: failed}
+          unmappedValue: unknown
+    - id: lifecycle-process-group-state
+      when: {fieldExists: $.details.graph_state}
+      output: {evidenceType: s-core.lifecycle.process-group.state}
+      value:
+        sourcePath: $.details.graph_state
+        targetPath: $.observation.state
+        transform:
+          operation: enumMap
+          values: {success: success, in-transition: in-transition, aborting: aborting, cancelled: cancelled, undefined-state: undefined-state}
+          unmappedValue: unknown
+    - id: lifecycle-exit-code
+      when: {fieldExists: $.details.exit_code}
+      output: {evidenceType: s-core.lifecycle.process.exit_code}
+      value:
+        sourcePath: $.details.exit_code
+        targetPath: $.observation.value
+        transform: {operation: scale, factor: 1}
+      constants:
+        - {targetPath: $.observation.unit, value: exit-code}
+    - id: lifecycle-pid
+      when: {fieldExists: $.details.pid}
+      output: {evidenceType: s-core.lifecycle.process.pid}
+      value:
+        sourcePath: $.details.pid
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: pid}
+    - id: lifecycle-run-target
+      when: {fieldExists: $.details.run_target}
+      output: {evidenceType: s-core.lifecycle.run-target}
+      value:
+        sourcePath: $.details.run_target
+        targetPath: $.observation.state
+    - id: lifecycle-health-status
+      when: {fieldExists: $.details.supervision_status}
+      output: {evidenceType: s-core.lifecycle.health.supervision_status}
+      value:
+        sourcePath: $.details.supervision_status
+        targetPath: $.observation.state
+        transform:
+          operation: enumMap
+          values: {ok: ok, failed: failed}
+          unmappedValue: unknown
+    - id: lifecycle-failed-supervision-type
+      when: {fieldExists: $.details.failed_supervision_type}
+      output: {evidenceType: s-core.lifecycle.health.failed_supervision_type}
+      value:
+        sourcePath: $.details.failed_supervision_type
+        targetPath: $.observation.state
+    - id: lifecycle-deadline-error
+      when: {fieldExists: $.details.deadline_error}
+      output: {evidenceType: s-core.lifecycle.health.deadline_error}
+      value:
+        sourcePath: $.details.deadline_error
+        targetPath: $.observation.state
+    - id: lifecycle-heartbeat-error
+      when: {fieldExists: $.details.heartbeat_error}
+      output: {evidenceType: s-core.lifecycle.health.heartbeat_error}
+      value:
+        sourcePath: $.details.heartbeat_error
+        targetPath: $.observation.state
+    - id: lifecycle-logic-error
+      when: {fieldExists: $.details.logic_error}
+      output: {evidenceType: s-core.lifecycle.health.logic_error}
+      value:
+        sourcePath: $.details.logic_error
+        targetPath: $.observation.state
+    - id: lifecycle-deadline-violation
+      when: {fieldExists: $.details.deadline_violation}
+      output: {evidenceType: s-core.lifecycle.health.deadline_violation}
+      value:
+        sourcePath: $.details.deadline_violation
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: bool}
+    - id: lifecycle-failed-cycles
+      when: {fieldExists: $.details.failed_supervision_cycles}
+      output: {evidenceType: s-core.lifecycle.health.failed_supervision_cycles}
+      value:
+        sourcePath: $.details.failed_supervision_cycles
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: cycles}
+    - id: lifecycle-alive-indications
+      when: {fieldExists: $.details.alive_indication_count}
+      output: {evidenceType: s-core.lifecycle.health.alive_indication_count}
+      value:
+        sourcePath: $.details.alive_indication_count
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: indications}
+    - id: lifecycle-process-error
+      when: {fieldExists: $.details.process_execution_error}
+      output: {evidenceType: s-core.lifecycle.process.process_execution_error}
+      value:
+        sourcePath: $.details.process_execution_error
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: error-code}
+    - id: lifecycle-process-group
+      when: {fieldExists: $.details.process_group_id}
+      output: {evidenceType: s-core.lifecycle.process-group.process_group_id}
+      value:
+        sourcePath: $.details.process_group_id
+        targetPath: $.observation.state
+    - id: lifecycle-recovery-state
+      when: {fieldExists: $.details.recovery_state}
+      output: {evidenceType: s-core.lifecycle.recovery.recovery_state}
+      value:
+        sourcePath: $.details.recovery_state
+        targetPath: $.observation.state
+  failureHandling:
+    missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
+    invalidValue: {result: emit-invalid-evidence, preserveOriginalValue: true}
+    unmappedEnum: {result: emit-unknown, mappingQuality: unmapped}
+    transformationError: {result: reject, emitAdapterDiagnostic: true}

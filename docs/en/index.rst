@@ -12,6 +12,12 @@ VEL Documentation (English)
 
 .. toctree::
    :maxdepth: 1
+   :caption: Design Documentation
+
+   design-docs/README
+
+.. toctree::
+   :maxdepth: 1
    :caption: Contribution
 
    ../contribution/guidelines_eng

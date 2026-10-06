@@ -1,0 +1,15 @@
+algorithm: sha256
+generatedFor: score-evidence-layer-package-1.0.0
+artifacts:
+  - path: README.md
+    digest: 10c42a1cde3486eb1a1c6d1b3b7ee59796b1bf547e1ed4ae4e45647bb5e6ed66
+  - path: manifest.yaml
+    digest: 63fcf24414d5ddc73ce590a303e50b923212481bdfbe3a72410b863841ccc1ce
+  - path: collectors/lifecycle-collector.yaml
+    digest: f351e7b103c9538b8a2ad84b11003b0f7e631ee3b2451b9f5c42cc28d27d0241
+  - path: schemas/score-lifecycle-state-v1.0.0.yaml
+    digest: 060499b2930472318da9b11627967322258b4daa23875631ac50fa0f5f690891
+  - path: mappings/score-lifecycle-to-evidence-v1.0.0.yaml
+    digest: 0762f0322ecc5276b8de43f196658051854dcb37f87a6af98ba5771bfee89a48
+  - path: tests/lifecycle-normalization-vectors.yaml
+    digest: 9a55e8e608a7805d433a9e1e0e6550468507ff3f7a4f4e6b14368598a52b22c8

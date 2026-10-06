@@ -1,0 +1,33 @@
+@startuml
+title S-CORE Lifecycle Collector | Transport Flow
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam activityBorderColor #2D3142
+skinparam activityBackgroundColor #FFFFFF
+skinparam activityFontColor #2D3142
+skinparam diamondBorderColor #4F5D75
+skinparam diamondBackgroundColor #ECECEC
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+start
+:Launch Manager emits process life status
+(comp_req__launch_man__ext_monitor_notify);
+:Collector reads ProcessState / GraphState
+(ProcessInfoNode::getState(), Graph::getState());
+#FFF1E9:VEL Lifecycle Collector maps fields
+(C++ binding to Launch Manager API);
+:Produce raw state record
+(conforms to score-lifecycle-state RawEvidenceSchema);
+:Schema Validator;
+:Normalization;
+:Evidence;
+stop
+
+note right
+Read-only: the collector never sends
+control commands to the Launch Manager.
+end note
+@enduml
