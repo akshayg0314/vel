@@ -34,7 +34,7 @@ spec:
   outputSchemaRef:
     name: score-normalized-evidence
     version: 1.0.0
-    path: interfaces/vendor-a-npu-evidence-layer-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    path: interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
   publication:
     transport: dds
     topic: ScoreNormalizedEvidence

@@ -12,12 +12,14 @@ spec:
     - {path: collectors/npu-runtime-collector.yaml, role: collector-config}
     - {path: schemas/vendor-a-npu-status-v1.2.0.yaml, role: input-schema}
     - {path: mappings/vendor-a-npu-to-evidence-v3.1.0.yaml, role: normalization-rule}
-    - {path: schemas/score-normalized-evidence-v1.0.0.yaml, role: output-schema}
     - {path: tests/normalization-vectors.yaml, role: verification-vectors}
     - {path: signatures/content-digests.yaml, role: integrity-manifest}
   signature:
     path: signatures/manifest.sig
     status: example-unsigned
+  sharedOutputSchema:
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    role: output-schema
   compatibility:
     inputSchema: "1.2.x"
     normalizationRule: "3.1.x"

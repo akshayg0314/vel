@@ -19,7 +19,7 @@ spec:
     path: signatures/manifest.sig
     status: example-unsigned
   sharedOutputSchema:
-    path: ../vendor-a-npu-evidence-layer-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
     role: output-schema
   compatibility:
     inputSchema: "1.0.x"

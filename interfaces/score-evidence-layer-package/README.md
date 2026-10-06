@@ -36,7 +36,7 @@ score-evidence-layer-package/
 
 **Yes.** The `NormalizedEvidenceSchema` and the Output Evidence schema are **shared across all sources** — they are NOT module-specific.
 
-- The single shared output schema is [`score-normalized-evidence-v1.0.0.yaml`](../vendor-a-npu-evidence-layer-package/schemas/score-normalized-evidence-v1.0.0.yaml). Every source (vendor-NPU, S-CORE lifecycle, etc.) normalizes into this same schema.
+- The single shared output schema is [`score-normalized-evidence-v1.0.0.yaml`](../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) (in its own [`vel-output-evidence-package`](../vel-output-evidence-package/), since it is not owned by any single source). Every source (vendor-NPU, S-CORE lifecycle, etc.) normalizes into this same schema.
 - Each source only needs its own **`RawEvidenceSchema`** (input) and its own **`EvidenceNormalizationRule`** (mapping). You do NOT create separate normalized/evidence/output YAMLs per module.
 
 So for the S-CORE Lifecycle module, the complete set is exactly three files:
