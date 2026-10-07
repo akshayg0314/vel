@@ -25,7 +25,7 @@
 |-------|------|----------------|-------------|---------------|
 | `graph_state` | enum | `success`, `in-transition`, `aborting`, `cancelled`, `undefined-state` | 프로세스 그룹 (종속성 그래프) 상태. | 조정된 컴포넌트 집합 (예: ADAS 스택)이 완전히 실행 중인지, 전환 중인지, 중단되었는지 보여줌. |
 | `process_group_id` | string | — | 프로세스 그룹 식별자. 문자열 이름에서 파생된 `IdentifierHash`. | 차량 원격 분석 상태 집계를 위한 관련 컴포넌트 그룹화. |
-| `run_target` | enum | `debug`, `production`, `test` | 활성 실행 대상 (배포 프로필). | 활성 소프트웨어 구성을 나타냄 — 규제 및 안전 추적성에 중요. |
+| `run_target` | string | — | 활성 실행 대상 이름 (통합자 정의, 예: `"Startup"`, `"Off"`, `"Fallback"`, `"Running"`, `"SafeState"`). | 활성 소프트웨어 구성을 나타냄 — 규제 및 안전 추적성에 중요. |
 
 ---
 
@@ -75,7 +75,7 @@
 
 | 필드 | 유형 | 허용 값 | 설명 | OEM 관련성 |
 |-------|------|----------------|-------------|---------------|
-| `recovery_state` | enum | `idle`, `timeout`, `sending`, `waiting_for_response` | 복구 작업 상태 (예: 프로세스 재시작). | 시스템이 결함에서 능동적으로 복구 중인지 보여줌 — 가용성 및 안전 분석에 중요. |
+| `recovery_state` | string | — | 폴백 실행 대상 이름 (`"fallback"` — `process_group_manager.hpp`의 하드코딩된 `IdentifierHash`). 복구 상태 머신이 아닙니다; 복구 시 시스템이 전환되는 실행 대상을 식별합니다. | 복구 중 시스템이 폴백하는 실행 대상을 보여줌 — 가용성 및 안전 분석에 중요. |
 | `recovery_action` | struct | `RestartAction { number_of_attempts: uint32, delay_before_restart_ms: uint32 }` 또는 `SwitchRunTargetAction { run_target: string }` | 수행된 복구 작업. `ready_recovery_action`은 `RestartAction`을 사용; `recovery_action`은 `SwitchRunTargetAction`을 사용. | 완화 전략 식별; 차량 원격 분석 정책 평가 지원. |
 
 > **`recovery_action` 유형 참고:** 이는 **단일 런타임 열거형이 아닙니다.** 소스 (`recovery_action_config.hpp`)에서 `RestartAction`과 `SwitchRunTargetAction`은 두 개의 별개 구성 구조체이며, 각각 다른 선택적 구성 슬롯 (`ready_recovery_action: Optional<RestartAction>`, `recovery_action: Optional<SwitchRunTargetAction>`)에서 사용됩니다. 어떤 작업이 적용되는지는 태그된 유니온/열거형이 아닌 채워진 슬롯에 의해 결정됩니다. `recovery_action`은 현재 VEL evidence 스키마의 일부가 아닙니다 (`recovery_state`만 수집됨); 완전성을 위해 여기에 문서화됩니다.
