@@ -4,7 +4,7 @@
 
 이 문서는 S-CORE Lifecycle 수집기의 **모듈별** 설계를 정의합니다. Lifecycle 모듈에 특정한 API 표면, 관찰 가능한 상태 필드, 소스 식별, 전송 경로를 다룹니다.
 
-> **TODO:** 공통 측면 (수집기 I/O API, 라이프사이클, 오류 및 진단 보고)은 공유 S-CORE 수집기 공통 설계 문서에서 정의할 예정입니다.
+> **공통 측면** (수집기 I/O API, 라이프사이클, 오류 및 진단 보고)은 공유 문서에서 정의됩니다: [`../../source-collector-interface-design.md`](../../source-collector-interface-design.md) (모든 VEL 수집기에 공통) 및 [`../s-core-collector-common-design.md`](../s-core-collector-common-design.md) (S-CORE 특화 명명 관례).
 
 ---
 

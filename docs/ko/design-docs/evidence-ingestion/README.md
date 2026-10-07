@@ -7,5 +7,7 @@
 ```{toctree}
 :maxdepth: 2
 
+source-collector-interface-design
+s-core-state-collection/s-core-collector-common-design
 s-core-state-collection/collectors/lifecycle-collector-design
 ```

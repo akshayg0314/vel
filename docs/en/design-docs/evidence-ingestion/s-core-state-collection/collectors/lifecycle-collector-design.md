@@ -4,7 +4,7 @@
 
 This document defines the **module-specific** design for the S-CORE Lifecycle collector. It covers the API surface, observable state fields, source identity, and transport path specific to the Lifecycle module.
 
-> **TODO:** Common aspects (collector I/O API, lifecycle, error & diagnostic reporting) to be defined in the shared S-CORE collector common design documentation.
+> **Common aspects** (collector I/O API, lifecycle, error & diagnostic reporting) are defined in the shared documents: [`../../source-collector-interface-design.md`](../../source-collector-interface-design.md) (common to every VEL collector) and [`../s-core-collector-common-design.md`](../s-core-collector-common-design.md) (S-CORE-specific naming conventions).
 
 ---
 
