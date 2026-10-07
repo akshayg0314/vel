@@ -63,12 +63,9 @@
 
 모든 수집기는 Evidence Runtime 내에서 동일한 라이프사이클 상태 머신을 따릅니다:
 
-```
-PROVISIONED ──► ACTIVE ──► RUNNING ──► SUSPENDED ──► TERMINATED
-                    ▲           │            ▲
-                    │           ▼            │
-                    └───────── ERROR ────────┘
-```
+![수집기 라이프사이클 상태 머신](../../features/assets/Collector_lifecycle_state_machine.svg)
+
+[PlantUML 원본](../../features/diagrams/Collector_lifecycle_state_machine.puml)
 
 | 상태 | 설명 |
 |-------|-------------|

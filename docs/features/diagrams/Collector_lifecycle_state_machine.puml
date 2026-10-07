@@ -1,0 +1,39 @@
+@startuml
+title VEL | Collector Lifecycle State Machine
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam stateBorderColor #2D3142
+skinparam stateBackgroundColor #FFFFFF
+skinparam stateFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+[*] --> PROVISIONED
+
+PROVISIONED --> ACTIVE : activate command\n(Evidence Runtime)
+ACTIVE --> RUNNING : collection request received
+RUNNING --> ACTIVE : collection cycle\ncompletes successfully
+ACTIVE --> SUSPENDED : suspend command\n(Evidence Runtime)
+SUSPENDED --> ACTIVE : resume command\n(Evidence Runtime)
+ACTIVE --> ERROR : unrecoverable error\nduring collection
+RUNNING --> ERROR : unrecoverable error\nduring collection
+ERROR --> TERMINATED : terminate command\n(Evidence Runtime)
+SUSPENDED --> TERMINATED : terminate command\n(Evidence Runtime)
+ACTIVE --> TERMINATED : terminate command\n(Evidence Runtime)
+TERMINATED --> [*]
+
+PROVISIONED : Configured and registered\nwith the Evidence Runtime,\nnot yet active.
+ACTIVE : Ready to accept\ncollection requests.
+RUNNING : Currently executing\na collection cycle.
+SUSPENDED : Temporarily paused\n(resource constraints, maintenance).
+ERROR : Unrecoverable error;\ncannot continue.
+TERMINATED : Permanently shut down.
+
+note right of ERROR
+This state machine applies to EVERY VEL collector,
+regardless of source category (runtime, hardware,
+or S-CORE module).
+end note
+@enduml

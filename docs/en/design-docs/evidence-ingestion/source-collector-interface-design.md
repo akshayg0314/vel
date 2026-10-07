@@ -63,12 +63,9 @@ Every collector produces the following output:
 
 Every collector follows the same lifecycle state machine within the Evidence Runtime:
 
-```
-PROVISIONED ──► ACTIVE ──► RUNNING ──► SUSPENDED ──► TERMINATED
-                    ▲           │            ▲
-                    │           ▼            │
-                    └───────── ERROR ────────┘
-```
+![Collector lifecycle state machine](../../features/assets/Collector_lifecycle_state_machine.svg)
+
+[PlantUML source](../../features/diagrams/Collector_lifecycle_state_machine.puml)
 
 | State | Description |
 |-------|-------------|
