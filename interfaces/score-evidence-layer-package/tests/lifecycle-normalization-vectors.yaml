@@ -1,0 +1,87 @@
+apiVersion: score.dev/v1alpha1
+kind: NormalizationTestSuite
+metadata:
+  name: score-lifecycle-mapping-tests
+  mappingName: score-lifecycle-to-evidence
+  mappingVersion: 1.0.0
+tests:
+  - name: nominal-message-generates-multiple-records
+    input:
+      message_id: lifecycle-1001
+      source_id: score-lifecycle
+      workload_id: launch-manager
+      execution_id: exec-9001
+      resource_id: component:brake-controller
+      timestamp_ns: 1984217732000
+      state: running
+      details:
+        graph_state: in-transition
+        exit_code: 0
+        pid: 2048
+        run_target: production
+        supervision_status: ok
+        alive_indication_count: 42
+    expect:
+      recordCount: 6
+      evidence:
+        - {evidenceType: s-core.lifecycle.component.state, state: running}
+        - {evidenceType: s-core.lifecycle.process-group.state, state: in-transition}
+        - {evidenceType: s-core.lifecycle.process.exit_code, value: 0, unit: exit-code}
+        - {evidenceType: s-core.lifecycle.process.pid, value: 2048, unit: pid}
+        - {evidenceType: s-core.lifecycle.run-target, state: production}
+        - {evidenceType: s-core.lifecycle.health.supervision_status, state: ok}
+  - name: health-supervision-failure-records
+    input:
+      message_id: lifecycle-1002
+      source_id: score-lifecycle
+      workload_id: health-monitor
+      execution_id: exec-9002
+      resource_id: monitor:deadline
+      timestamp_ns: 1984217733000
+      state: failed
+      details:
+        supervision_status: failed
+        failed_supervision_type: deadline
+        deadline_error: too_late
+        deadline_violation: true
+        failed_supervision_cycles: 3
+    expect:
+      recordCount: 5
+      evidence:
+        - {evidenceType: s-core.lifecycle.component.state, state: failed}
+        - {evidenceType: s-core.lifecycle.health.supervision_status, state: failed}
+        - {evidenceType: s-core.lifecycle.health.failed_supervision_type, state: deadline}
+        - {evidenceType: s-core.lifecycle.health.deadline_error, state: too_late}
+        - {evidenceType: s-core.lifecycle.health.deadline_violation, value: true, unit: bool}
+  - name: records-carry-traceability-and-quality
+    input:
+      message_id: lifecycle-1003
+      source_id: score-lifecycle
+      workload_id: launch-manager
+      execution_id: exec-9003
+      resource_id: run-target:production
+      timestamp_ns: 1984217734000
+      state: starting
+    expect:
+      contains:
+        evidenceType: s-core.lifecycle.component.state
+        state: starting
+        clockDomain: wall-clock
+        validity: valid
+        freshness: current
+        completeness: complete
+        mappingQuality: exact
+        inputSchemaVersion: "1.0.0"
+        normalizationRuleVersion: "1.0.0"
+        sourceMessageId: lifecycle-1003
+  - name: missing-required-field-is-rejected
+    input:
+      message_id: lifecycle-1004
+      source_id: score-lifecycle
+      workload_id: launch-manager
+      execution_id: exec-9004
+      resource_id: component:brake-controller
+      timestamp_ns: 1984217735000
+    expect:
+      rejected: true
+      adapterDiagnostic: MANDATORY_FIELD_MISSING

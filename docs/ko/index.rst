@@ -12,6 +12,12 @@ VEL 문서 (한국어)
 
 .. toctree::
    :maxdepth: 1
+   :caption: 설계 문서
+
+   design-docs/README
+
+.. toctree::
+   :maxdepth: 1
    :caption: 기여 가이드
 
    ../contribution/guidelines_kor

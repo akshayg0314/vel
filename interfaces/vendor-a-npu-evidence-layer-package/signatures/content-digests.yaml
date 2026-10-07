@@ -2,16 +2,15 @@ algorithm: sha256
 generatedFor: vendor-a-npu-evidence-layer-package-1.0.0
 artifacts:
   - path: README.md
-    digest: 673ded64edbf0dc936d2be909d4a327ce66f9e1dabe81427e0dff957b30af63e
+    digest: 7b5685d422683ac08bb697e1f08fcd525e3dcb7eecbae5f872e0e9c395a0a457
   - path: collectors/npu-runtime-collector.yaml
-    digest: 12932d44896964037e7f6eeb7c86db57530ef985238e3ad510bfb93494934c54
+    digest: 05772c023d0bd476a184cc136a0d2402e262404208bf6c95164f5950dac8da66
   - path: manifest.yaml
-    digest: ebfcdb4d673ff05b8918b400c3b7ed9b486e6e9aa49f8ea7f6f6712b36215f67
+    digest: 0720e532edba6d5452d301cf42688bfc71b3ab809219a208d53ce47e9701322d
   - path: mappings/vendor-a-npu-to-evidence-v3.1.0.yaml
-    digest: cdef04593d1e7547842a77722f604f7e5d8dba576ab8001527b3047ecabd564e
-  - path: schemas/score-normalized-evidence-v1.0.0.yaml
-    digest: 66d1411441f71d9b59590392fbaaad366cdca45a4b4895265a5de52612e8c440
+    digest: 72966dd9d1a8ec25abb4b3b7faefa8174f5f119027cf9da326c886872fbf4b00
   - path: schemas/vendor-a-npu-status-v1.2.0.yaml
     digest: 81125150c7cfce133fa68893ec23c75f7f09f65df7bcc936106d4d48bb6977f4
   - path: tests/normalization-vectors.yaml
-    digest: 393d246f8cf2274cc4b39913a9583acbc7bd4cfe830be87bff8cb36a2551ec95
+    digest: 31fd246af9c850a02678cee0fa3b512e3789316f5cdee2b84fd0ebd3aa7ac9f4
+

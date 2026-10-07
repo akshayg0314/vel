@@ -1,0 +1,70 @@
+@startuml
+title S-CORE Lifecycle | Type Model (Process / Recovery)
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam classBorderColor #2D3142
+skinparam classBackgroundColor #FFFFFF
+skinparam classFontColor #2D3142
+skinparam classAttributeFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+enum ProcessState {
+  kIdle = 0
+  kStarting = 1
+  kRunning = 2
+  kTerminating = 3
+  kTerminated = 4
+  kFailed = 5
+}
+
+enum GraphState {
+  kSuccess = 0
+  kInTransition = 1
+  kAborting = 2
+  kCancelled = 3
+  kUndefinedState = 4
+}
+
+class ProcessInfoNode {
+  +getPid() : osal::ProcessID
+  +getState() : ProcessState
+  +getTerminationTimeout() : milliseconds
+  +getControlClientChannel() : ControlClientChannelP
+}
+
+class RestartAction {
+  +number_of_attempts : uint32
+  +delay_before_restart_ms : uint32
+}
+
+class SwitchRunTargetAction {
+  +run_target : string
+}
+
+class ComponentConfig {
+  +ready_recovery_action : optional<RestartAction>
+  +recovery_action : optional<SwitchRunTargetAction>
+}
+
+ProcessInfoNode --> ProcessState : getState()
+ComponentConfig "1" o-- "0..1" RestartAction : ready_recovery_action
+ComponentConfig "1" o-- "0..1" SwitchRunTargetAction : recovery_action
+
+note right of ComponentConfig
+RestartAction and SwitchRunTargetAction are two
+DISTINCT config structs in two DIFFERENT optional
+slots -- not a tagged union / single enum.
+Only one slot is populated per component config.
+end note
+
+note bottom of ProcessInfoNode
+exit_code, pid (outside getPid()), and
+process_execution_error are NOT exposed via
+getters on this class -- only observable via
+the external monitor notification callback
+(comp_req__launch_man__ext_monitor_notify).
+end note
+@enduml

@@ -1,0 +1,27 @@
+apiVersion: score.dev/v1alpha1
+kind: EvidenceInterfacePackage
+metadata:
+  name: score-evidence-layer-package
+  version: 1.0.0
+spec:
+  owner: score
+  primaryLayer: evidence
+  collectorConfigs:
+    - collectors/lifecycle-collector.yaml
+  artifacts:
+    - {path: README.md, role: documentation}
+    - {path: collectors/lifecycle-collector.yaml, role: collector-config}
+    - {path: schemas/score-lifecycle-state-v1.0.0.yaml, role: input-schema}
+    - {path: mappings/score-lifecycle-to-evidence-v1.0.0.yaml, role: normalization-rule}
+    - {path: tests/lifecycle-normalization-vectors.yaml, role: verification-vectors}
+    - {path: signatures/content-digests.yaml, role: integrity-manifest}
+  signature:
+    path: signatures/manifest.sig
+    status: example-unsigned
+  sharedOutputSchema:
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    role: output-schema
+  compatibility:
+    inputSchema: "1.0.x"
+    normalizationRule: "1.0.x"
+    outputSchema: "1.0.x"

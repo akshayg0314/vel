@@ -1,22 +1,21 @@
 apiVersion: score.dev/v1alpha1
 kind: VehicleEvidenceCollector
 metadata:
-  name: npu-runtime-collector
+  name: lifecycle-collector
   version: 1.0.0
 spec:
   source:
-    transport: dds
-    topic: VendorANpuRuntimeStatus
-    domainId: 100
-    messageType: VendorANpuStatus
+    transport: s-core-api
+    api: lifecycle-state-api
+    messageType: ScoreLifecycleState
   inputSchemaRef:
-    name: vendor-a-npu-status
-    version: 1.2.0
-    path: schemas/vendor-a-npu-status-v1.2.0.yaml
+    name: score-lifecycle-state
+    version: 1.0.0
+    path: schemas/score-lifecycle-state-v1.0.0.yaml
   normalizationRuleRef:
-    name: vendor-a-npu-to-score-evidence
-    version: 3.1.0
-    path: mappings/vendor-a-npu-to-evidence-v3.1.0.yaml
+    name: score-lifecycle-to-evidence
+    version: 1.0.0
+    path: mappings/score-lifecycle-to-evidence-v1.0.0.yaml
   outputSchemaRef:
     name: score-normalized-evidence
     version: 1.0.0

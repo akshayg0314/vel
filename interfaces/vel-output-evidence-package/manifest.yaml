@@ -1,0 +1,17 @@
+apiVersion: score.dev/v1alpha1
+kind: EvidenceInterfacePackage
+metadata:
+  name: vel-output-evidence-package
+  version: 1.0.0
+spec:
+  owner: score
+  primaryLayer: evidence
+  artifacts:
+    - {path: README.md, role: documentation}
+    - {path: schemas/score-normalized-evidence-v1.0.0.yaml, role: output-schema}
+    - {path: signatures/content-digests.yaml, role: integrity-manifest}
+  signature:
+    path: signatures/manifest.sig
+    status: example-unsigned
+  compatibility:
+    outputSchema: "1.0.x"

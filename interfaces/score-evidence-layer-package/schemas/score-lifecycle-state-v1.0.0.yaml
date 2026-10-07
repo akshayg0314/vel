@@ -1,0 +1,71 @@
+apiVersion: score.dev/v1alpha1
+kind: RawEvidenceSchema
+metadata:
+  name: score-lifecycle-state
+  version: 1.0.0
+spec:
+  owner: score
+  encoding: json
+  messageType: ScoreLifecycleState
+  additionalFields: reject
+  fields:
+    - {name: message_id, path: $.message_id, type: string, required: true}
+    - {name: source_id, path: $.source_id, type: string, required: true}
+    - {name: workload_id, path: $.workload_id, type: string, required: true}
+    - {name: execution_id, path: $.execution_id, type: string, required: true}
+    - {name: resource_id, path: $.resource_id, type: string, required: true}
+    - {name: timestamp_ns, path: $.timestamp_ns, type: uint64, required: true}
+    - name: state
+      path: $.state
+      type: enum
+      required: true
+      allowedValues: [idle, starting, running, terminating, terminated, failed]
+    - name: previous_state
+      path: $.previous_state
+      type: enum
+      required: false
+      allowedValues: [idle, starting, running, terminating, terminated, failed]
+    - {name: transition_time_ns, path: $.transition_time_ns, type: uint64, required: false}
+    - name: run_target
+      path: $.details.run_target
+      type: enum
+      required: false
+      allowedValues: [debug, production, test]
+    - {name: exit_code, path: $.details.exit_code, type: int32, required: false}
+    - {name: pid, path: $.details.pid, type: uint32, required: false}
+    - name: graph_state
+      path: $.details.graph_state
+      type: enum
+      required: false
+      allowedValues: [success, in-transition, aborting, cancelled, undefined-state]
+    - name: supervision_status
+      path: $.details.supervision_status
+      type: enum
+      required: false
+      allowedValues: [ok, failed]
+    - {name: failed_supervision_cycles, path: $.details.failed_supervision_cycles, type: uint32, required: false}
+    - name: failed_supervision_type
+      path: $.details.failed_supervision_type
+      type: enum
+      required: false
+      allowedValues: [heartbeat, deadline, logic]
+    - name: deadline_error
+      path: $.details.deadline_error
+      type: enum
+      required: false
+      allowedValues: [too_early, too_late]
+    - name: heartbeat_error
+      path: $.details.heartbeat_error
+      type: enum
+      required: false
+      allowedValues: [too_early, too_late, multiple_heartbeats]
+    - name: logic_error
+      path: $.details.logic_error
+      type: enum
+      required: false
+      allowedValues: [invalid_state, invalid_transition, unmapped_error]
+    - {name: deadline_violation, path: $.details.deadline_violation, type: bool, required: false}
+    - {name: alive_indication_count, path: $.details.alive_indication_count, type: uint32, required: false}
+    - {name: process_execution_error, path: $.details.process_execution_error, type: uint32, required: false}
+    - {name: process_group_id, path: $.details.process_group_id, type: string, required: false}
+    - {name: recovery_state, path: $.details.recovery_state, type: enum, required: false, allowedValues: [idle, timeout, sending, waiting_for_response]}

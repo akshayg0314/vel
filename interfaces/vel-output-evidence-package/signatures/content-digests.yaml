@@ -1,0 +1,9 @@
+algorithm: sha256
+generatedFor: vel-output-evidence-package-1.0.0
+artifacts:
+  - path: README.md
+    digest: ea51eb730acadad77058c47d94c2d3fcf58013e98f360474f7b30f379f7b1983
+  - path: manifest.yaml
+    digest: aa62fb4405669284981dc1cb262efbf65d872cee566f9fcee6e67a04cd3571e0
+  - path: schemas/score-normalized-evidence-v1.0.0.yaml
+    digest: 66d1411441f71d9b59590392fbaaad366cdca45a4b4895265a5de52612e8c440
