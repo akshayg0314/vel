@@ -55,7 +55,7 @@ spec:
 
 ### 2.1 Observable State
 
-- **Run target state**: which run target is active (`debug`, `production`, etc.).
+- **Run target state**: which run target is active (string name, e.g. `"Startup"`, `"Off"`, `"Fallback"`).
 - **Component states**: started, running, stopped (per the Lifecycle Interface).
 - **Process health**: alive/liveliness, exit codes, resource usage.
 - **Process runtime identity**: process identifier (`pid`), exposed via the lifecycle API and surfaced in the schema as `details.pid`.
@@ -153,7 +153,7 @@ The collector produces raw state records conforming to the `score-lifecycle-stat
 | `state` | `$.state` | enum | ✓ |
 | `previous_state` | `$.previous_state` | enum | – |
 | `transition_time_ns` | `$.transition_time_ns` | uint64 | – |
-| `run_target` | `$.details.run_target` | enum | – |
+| `run_target` | `$.details.run_target` | string | – |
 | `exit_code` | `$.details.exit_code` | int32 | – |
 | `pid` | `$.details.pid` | uint32 | – |
 | `graph_state` | `$.details.graph_state` | enum | – |
@@ -167,7 +167,7 @@ The collector produces raw state records conforming to the `score-lifecycle-stat
 | `alive_indication_count` | `$.details.alive_indication_count` | uint32 | – |
 | `process_execution_error` | `$.details.process_execution_error` | uint32 | – |
 | `process_group_id` | `$.details.process_group_id` | string | – |
-| `recovery_state` | `$.details.recovery_state` | enum | – |
+| `recovery_state` | `$.details.recovery_state` | string | – |
 
 ---
 

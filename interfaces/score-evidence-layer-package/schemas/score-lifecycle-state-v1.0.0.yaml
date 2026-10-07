@@ -28,9 +28,8 @@ spec:
     - {name: transition_time_ns, path: $.transition_time_ns, type: uint64, required: false}
     - name: run_target
       path: $.details.run_target
-      type: enum
+      type: string
       required: false
-      allowedValues: [debug, production, test]
     - {name: exit_code, path: $.details.exit_code, type: int32, required: false}
     - {name: pid, path: $.details.pid, type: uint32, required: false}
     - name: graph_state
@@ -68,4 +67,4 @@ spec:
     - {name: alive_indication_count, path: $.details.alive_indication_count, type: uint32, required: false}
     - {name: process_execution_error, path: $.details.process_execution_error, type: uint32, required: false}
     - {name: process_group_id, path: $.details.process_group_id, type: string, required: false}
-    - {name: recovery_state, path: $.details.recovery_state, type: enum, required: false, allowedValues: [idle, timeout, sending, waiting_for_response]}
+    - {name: recovery_state, path: $.details.recovery_state, type: string, required: false}

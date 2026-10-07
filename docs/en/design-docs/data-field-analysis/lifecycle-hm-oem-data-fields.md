@@ -25,7 +25,7 @@
 |-------|------|----------------|-------------|---------------|
 | `graph_state` | enum | `success`, `in-transition`, `aborting`, `cancelled`, `undefined-state` | State of the process group (dependency graph). | Shows whether a coordinated set of components (e.g., an ADAS stack) is fully up, transitioning, or aborted. |
 | `process_group_id` | string | — | Identifier of the process group. It is an `IdentifierHash` derived from a string name. | Groups related components for fleet-level health aggregation. |
-| `run_target` | enum | `debug`, `production`, `test` | Active run target (deployment profile). | Indicates which software configuration is active — important for regulatory and safety traceability. |
+| `run_target` | string | — | Active run target name (integrator-defined, e.g. `"Startup"`, `"Off"`, `"Fallback"`, `"Running"`, `"SafeState"`). | Indicates which software configuration is active — important for regulatory and safety traceability. |
 
 ---
 
@@ -75,7 +75,7 @@
 
 | Field | Type | Allowed Values | Description | OEM Relevance |
 |-------|------|----------------|-------------|---------------|
-| `recovery_state` | enum | `idle`, `timeout`, `sending`, `waiting_for_response` | State of the recovery action (e.g., process restart). | Shows whether the system is actively recovering from a fault — critical for availability and safety analysis. |
+| `recovery_state` | string | — | Fallback run target name (`"fallback"` — hardcoded `IdentifierHash` in `process_group_manager.hpp`). Not a recovery state machine; it identifies the run target the system transitions to on recovery. | Shows which run target the system falls back to during recovery — critical for availability and safety analysis. |
 | `recovery_action` | struct | `RestartAction { number_of_attempts: uint32, delay_before_restart_ms: uint32 }` or `SwitchRunTargetAction { run_target: string }` | The recovery action taken. `ready_recovery_action` uses `RestartAction`; `recovery_action` uses `SwitchRunTargetAction`. | Identifies the mitigation strategy; supports fleet-level policy evaluation. |
 
 > **Note on `recovery_action` typing:** This is **not** a single runtime enum. In the source (`recovery_action_config.hpp`), `RestartAction` and `SwitchRunTargetAction` are two distinct configuration structs, each used in a different optional config slot (`ready_recovery_action: Optional<RestartAction>`, `recovery_action: Optional<SwitchRunTargetAction>`). Which action applies is determined by which slot is populated, not by a tagged union/enum. `recovery_action` is not currently part of the VEL evidence schema (only `recovery_state` is collected); it is documented here for completeness.
