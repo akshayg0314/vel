@@ -17,6 +17,7 @@ participant "Graph /\nProcessInfoNode" as State
 participant "VEL Lifecycle\nCollector" as Collector
 participant "Schema Validator" as Validator
 participant "Normalization\nProcessor" as Normalizer
+participant "Vehicle Evidence\nPublisher" as Publisher
 
 Collector -> State : graph.getState()
 State --> Collector : GraphState (kSuccess, kInTransition, ...)
@@ -29,11 +30,24 @@ they arrive only through the external monitor notification callback.
 end note
 
 LM -> Collector : ext_monitor_notify callback\n(pid, exit_code, process_execution_error)
-HM -> Collector : supervision status\n(deadline / heartbeat / logic)
+HM -> Collector : supervision status\n(supervision_status, failed_supervision_type,\nfailed_supervision_cycles, deadline_error,\nheartbeat_error, logic_error,\ndeadline_violation, alive_indication_count)
 
 Collector -> Collector : map fields to raw state record\n(score-lifecycle-state schema)
 Collector -> Validator : raw state record
-Validator --> Collector : schema-valid / reject
-Collector -> Normalizer : validated raw state record
-Normalizer --> Collector : normalized Vehicle Evidence
+alt schema-valid
+  Validator --> Collector : schema-valid
+  Collector -> Normalizer : validated raw state record
+  Normalizer -> Publisher : normalized Vehicle Evidence
+  Publisher -> Publisher : DDS publish\n(ScoreNormalizedEvidence, reliable)
+  note right of Publisher
+    DDS reliable delivery: the transport layer
+    guarantees delivery asynchronously.
+    The Collector monitors VEL health via the
+    separate ScoreEvidenceLayerHealth topic
+    (not via a synchronous ack from Publisher).
+  end note
+else schema-invalid / reject
+  Validator --> Collector : reject + AdapterDiagnostic
+  Collector -> Collector : drop record,\nemit diagnostic
+end
 @enduml

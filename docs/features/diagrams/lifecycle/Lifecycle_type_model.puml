@@ -1,5 +1,5 @@
 @startuml
-title S-CORE Lifecycle | Type Model (Process / Recovery)
+title S-CORE Lifecycle | Type Model (Process / Recovery / Health Monitor)
 skinparam backgroundColor #F5F5F5
 skinparam shadowing false
 skinparam roundCorner 8
@@ -28,6 +28,45 @@ enum GraphState {
   kUndefinedState = 4
 }
 
+enum SupervisionStatus {
+  kOk = 0
+  kFailed = 1
+}
+
+enum FailedSupervisionType {
+  kHeartbeat = 0
+  kDeadline = 1
+  kLogic = 2
+}
+
+enum DeadlineError {
+  kTooEarly = 0
+  kTooLate = 1
+}
+
+enum HeartbeatError {
+  kTooEarly = 0
+  kTooLate = 1
+  kMultipleHeartbeats = 2
+}
+
+enum LogicError {
+  kInvalidState = 0
+  kInvalidTransition = 1
+  kUnmappedError = 2
+}
+
+class HealthMonitorState {
+  +supervision_status : SupervisionStatus
+  +failed_supervision_type : FailedSupervisionType
+  +failed_supervision_cycles : uint32
+  +deadline_error : DeadlineError
+  +heartbeat_error : HeartbeatError
+  +logic_error : LogicError
+  +deadline_violation : bool
+  +alive_indication_count : uint32
+}
+
 class ProcessInfoNode {
   +getPid() : osal::ProcessID
   +getState() : ProcessState
@@ -50,6 +89,11 @@ class ComponentConfig {
 }
 
 ProcessInfoNode --> ProcessState : getState()
+HealthMonitorState --> SupervisionStatus : supervision_status
+HealthMonitorState --> FailedSupervisionType : failed_supervision_type
+HealthMonitorState --> DeadlineError : deadline_error
+HealthMonitorState --> HeartbeatError : heartbeat_error
+HealthMonitorState --> LogicError : logic_error
 ComponentConfig "1" o-- "0..1" RestartAction : ready_recovery_action
 ComponentConfig "1" o-- "0..1" SwitchRunTargetAction : recovery_action
 
@@ -65,6 +109,15 @@ exit_code, pid (outside getPid()), and
 process_execution_error are NOT exposed via
 getters on this class -- only observable via
 the external monitor notification callback
-(comp_req__launch_man__ext_monitor_notify).
+(comp_req_launch_man_ext_monitor_notify).
+end note
+
+note right of HealthMonitorState
+Health Monitor supervision fields map to
+score-lifecycle-state RawEvidenceSchema
+(supervision_status, failed_supervision_type,
+deadline_error, heartbeat_error, logic_error,
+deadline_violation, failed_supervision_cycles,
+alive_indication_count).
 end note
 @enduml

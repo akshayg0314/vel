@@ -14,16 +14,19 @@ skinparam noteBorderColor #BFC0C0
 
 start
 :Launch Manager emits process life status
-(comp_req__launch_man__ext_monitor_notify);
+(comp_req_launch_man_ext_monitor_notify);
 :Collector reads ProcessState / GraphState
 (ProcessInfoNode::getState(), Graph::getState());
+:Collector receives Health Monitor supervision status
+(supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count);
 #FFF1E9:VEL Lifecycle Collector maps fields
-(C++ binding to Launch Manager API);
+(C++ binding to Launch Manager & Health Monitor API);
 :Produce raw state record
 (conforms to score-lifecycle-state RawEvidenceSchema);
-:Schema Validator;
-:Normalization;
-:Evidence;
+:Schema Validator validates raw state record;
+:Normalization Processor maps to normalized Vehicle Evidence;
+:Publish normalized Vehicle Evidence
+(DDS topic ScoreNormalizedEvidence, reliable);
 stop
 
 note right
