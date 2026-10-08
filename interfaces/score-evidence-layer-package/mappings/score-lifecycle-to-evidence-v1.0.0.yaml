@@ -63,7 +63,7 @@ spec:
         - {targetPath: $.observation.unit, value: pid}
     - id: lifecycle-run-target
       when: {fieldExists: $.details.run_target}
-      output: {evidenceType: s-core.lifecycle.run-target}
+      output: {evidenceType: s-core.lifecycle.run_target}
       value:
         sourcePath: $.details.run_target
         targetPath: $.observation.state

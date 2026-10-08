@@ -22,14 +22,15 @@ tests:
         supervision_status: ok
         alive_indication_count: 42
     expect:
-      recordCount: 6
+      recordCount: 7
       evidence:
         - {evidenceType: s-core.lifecycle.component.state, state: running}
         - {evidenceType: s-core.lifecycle.process-group.state, state: in-transition}
         - {evidenceType: s-core.lifecycle.process.exit_code, value: 0, unit: exit-code}
         - {evidenceType: s-core.lifecycle.process.pid, value: 2048, unit: pid}
-        - {evidenceType: s-core.lifecycle.run-target, state: production}
+        - {evidenceType: s-core.lifecycle.run_target, state: production}
         - {evidenceType: s-core.lifecycle.health.supervision_status, state: ok}
+        - {evidenceType: s-core.lifecycle.health.alive_indication_count, value: 42, unit: indications}
   - name: health-supervision-failure-records
     input:
       message_id: lifecycle-1002
@@ -46,13 +47,14 @@ tests:
         deadline_violation: true
         failed_supervision_cycles: 3
     expect:
-      recordCount: 5
+      recordCount: 6
       evidence:
         - {evidenceType: s-core.lifecycle.component.state, state: failed}
         - {evidenceType: s-core.lifecycle.health.supervision_status, state: failed}
         - {evidenceType: s-core.lifecycle.health.failed_supervision_type, state: deadline}
         - {evidenceType: s-core.lifecycle.health.deadline_error, state: too_late}
         - {evidenceType: s-core.lifecycle.health.deadline_violation, value: true, unit: bool}
+        - {evidenceType: s-core.lifecycle.health.failed_supervision_cycles, value: 3, unit: cycles}
   - name: records-carry-traceability-and-quality
     input:
       message_id: lifecycle-1003
