@@ -115,7 +115,7 @@ Each field above maps to a normalized evidence type in the VEL package:
 | `s-core.lifecycle.process-group.state` | `graph_state` |
 | `s-core.lifecycle.process.exit_code` | `exit_code` |
 | `s-core.lifecycle.process.pid` | `pid` |
-| `s-core.lifecycle.run-target` | `run_target` |
+| `s-core.lifecycle.run_target` | `run_target` |
 | `s-core.lifecycle.health.supervision_status` | `supervision_status` |
 | `s-core.lifecycle.health.failed_supervision_type` | `failed_supervision_type` |
 | `s-core.lifecycle.health.deadline_error` | `deadline_error` |

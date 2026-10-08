@@ -34,7 +34,7 @@ spec:
   outputSchemaRef:
     name: score-normalized-evidence
     version: 1.0.0
-    path: interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
   publication:
     transport: dds
     topic: ScoreNormalizedEvidence
@@ -87,11 +87,17 @@ spec:
   };
   ```
 
-아래 다이어그램은 `ProcessState`, `GraphState`, 복구 작업 구성 유형을 유형 모델로 보여줍니다. `RestartAction`과 `SwitchRunTargetAction`은 **별개의** 구성 구조체로, **서로 다른** 선택적 슬롯 (`ready_recovery_action` / `recovery_action`)을 차지합니다 — 태그된 유니온이나 단일 열거형이 아닙니다.
+아래 다이어그램은 `ProcessState`, `GraphState`, 복구 작업 구성 유형, Health Monitor 감독 유형을 유형 모델로 보여줍니다. `RestartAction`과 `SwitchRunTargetAction`은 **별개의** 구성 구조체로, **서로 다른** 선택적 슬롯 (`ready_recovery_action` / `recovery_action`)을 차지합니다 — 태그된 유니온이나 단일 열거형이 아닙니다.
 
 ![Lifecycle 유형 모델](../../../../../features/assets/lifecycle/Lifecycle_type_model.svg)
 
 [PlantUML 소스](../../../../../features/diagrams/lifecycle/Lifecycle_type_model.puml)
+
+아래 클래스 다이어그램은 VEL 측 수집기 구현 클래스 (LifecycleCollector, LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics)와 이들이 읽는 소스 측 S-CORE 유형을 보여줍니다:
+
+![Lifecycle 수집기 클래스 다이어그램](../../../../../features/assets/lifecycle/Lifecycle_collector_class_diagram.svg)
+
+[PlantUML 소스](../../../../../features/diagrams/lifecycle/Lifecycle_collector_class_diagram.puml)
 
 ### 2.3 Lifecycle API 필드
 
@@ -172,6 +178,12 @@ score::mw::lifecycle::ProcessState proc_state = process_node.getState();  // kId
 ---
 
 ## 5. 전송 경로
+
+아래 정적 뷰는 VEL Evidence Ingestion 아키텍처에서 Lifecycle 수집기의 위치와 Schema Validator, Normalization Processor, DDS 게시 토픽과의 상호작용을 보여줍니다:
+
+![Lifecycle 수집기 정적 뷰](../../../../../features/assets/lifecycle/Lifecycle_collector_static_view.svg)
+
+[PlantUML 소스](../../../../../features/diagrams/lifecycle/Lifecycle_collector_static_view.puml)
 
 ![Lifecycle 수집기 전송 흐름](../../../../../features/assets/lifecycle/Lifecycle_collector_transport_flow.svg)
 

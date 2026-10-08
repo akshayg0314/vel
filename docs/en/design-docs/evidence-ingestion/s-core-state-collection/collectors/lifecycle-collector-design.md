@@ -34,7 +34,7 @@ spec:
   outputSchemaRef:
     name: score-normalized-evidence
     version: 1.0.0
-    path: interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
   publication:
     transport: dds
     topic: ScoreNormalizedEvidence
@@ -87,11 +87,17 @@ spec:
   };
   ```
 
-The diagram below shows `ProcessState`, `GraphState`, and the recovery-action config types as a type model. `RestartAction` and `SwitchRunTargetAction` are two **distinct** config structs occupying two **different** optional slots (`ready_recovery_action` / `recovery_action`) — not a tagged union or single enum.
+The diagram below shows `ProcessState`, `GraphState`, the recovery-action config types, and the Health Monitor supervision types as a type model. `RestartAction` and `SwitchRunTargetAction` are two **distinct** config structs occupying two **different** optional slots (`ready_recovery_action` / `recovery_action`) — not a tagged union or single enum.
 
 ![Lifecycle type model](../../../../../features/assets/lifecycle/Lifecycle_type_model.svg)
 
 [PlantUML source](../../../../../features/diagrams/lifecycle/Lifecycle_type_model.puml)
+
+The class diagram below shows the VEL-side collector implementation classes (LifecycleCollector, LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics) and the source-side S-CORE types they read:
+
+![Lifecycle collector class diagram](../../../../../features/assets/lifecycle/Lifecycle_collector_class_diagram.svg)
+
+[PlantUML source](../../../../../features/diagrams/lifecycle/Lifecycle_collector_class_diagram.puml)
 
 ### 2.3 Lifecycle API Fields
 
@@ -172,6 +178,12 @@ The collector produces raw state records conforming to the `score-lifecycle-stat
 ---
 
 ## 5. Transport Path
+
+The static view below shows where the Lifecycle Collector sits in the VEL Evidence Ingestion architecture and its interactions with the Schema Validator, Normalization Processor, and the DDS publication topic:
+
+![Lifecycle collector static view](../../../../../features/assets/lifecycle/Lifecycle_collector_static_view.svg)
+
+[PlantUML source](../../../../../features/diagrams/lifecycle/Lifecycle_collector_static_view.puml)
 
 ![Lifecycle collector transport flow](../../../../../features/assets/lifecycle/Lifecycle_collector_transport_flow.svg)
 
