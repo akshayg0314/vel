@@ -55,6 +55,23 @@ tests:
         - {evidenceType: s-core.lifecycle.health.deadline_error, state: too_late}
         - {evidenceType: s-core.lifecycle.health.deadline_violation, value: true, unit: bool}
         - {evidenceType: s-core.lifecycle.health.failed_supervision_cycles, value: 3, unit: cycles}
+  - name: previous-state-and-transition-time-mappings
+    input:
+      message_id: lifecycle-1005
+      source_id: score-lifecycle
+      workload_id: launch-manager
+      execution_id: exec-9005
+      resource_id: component:brake-controller
+      timestamp_ns: 1984217736000
+      state: running
+      previous_state: starting
+      transition_time_ns: 1984217735000
+    expect:
+      recordCount: 3
+      evidence:
+        - {evidenceType: s-core.lifecycle.component.state, state: running}
+        - {evidenceType: s-core.lifecycle.component.previous_state, state: starting}
+        - {evidenceType: s-core.lifecycle.component.transition_time, value: 1984217735000, unit: ns}
   - name: records-carry-traceability-and-quality
     input:
       message_id: lifecycle-1003

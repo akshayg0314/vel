@@ -34,6 +34,24 @@ spec:
           operation: enumMap
           values: {idle: idle, starting: starting, running: running, terminating: terminating, terminated: terminated, failed: failed}
           unmappedValue: unknown
+    - id: lifecycle-previous-state
+      when: {fieldExists: $.previous_state}
+      output: {evidenceType: s-core.lifecycle.component.previous_state}
+      value:
+        sourcePath: $.previous_state
+        targetPath: $.observation.state
+        transform:
+          operation: enumMap
+          values: {idle: idle, starting: starting, running: running, terminating: terminating, terminated: terminated, failed: failed}
+          unmappedValue: unknown
+    - id: lifecycle-transition-time
+      when: {fieldExists: $.transition_time_ns}
+      output: {evidenceType: s-core.lifecycle.component.transition_time}
+      value:
+        sourcePath: $.transition_time_ns
+        targetPath: $.observation.value
+      constants:
+        - {targetPath: $.observation.unit, value: ns}
     - id: lifecycle-process-group-state
       when: {fieldExists: $.details.graph_state}
       output: {evidenceType: s-core.lifecycle.process-group.state}
