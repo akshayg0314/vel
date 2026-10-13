@@ -65,6 +65,9 @@ class HealthMonitorState {
   +logic_error : LogicError
   +deadline_violation : bool
   +alive_indication_count : uint32
+  +process_execution_error : uint32
+  +process_group_id : string
+  +recovery_state : string
 }
 
 class ProcessInfoNode {
@@ -105,11 +108,10 @@ Only one slot is populated per component config.
 end note
 
 note bottom of ProcessInfoNode
-exit_code, pid (outside getPid()), and
-process_execution_error are NOT exposed via
-getters on this class -- only observable via
-the external monitor notification callback
-(comp_req_launch_man_ext_monitor_notify).
+  pid is exposed via getPid(). exit_code and process_execution_error are NOT exposed via getters on this class; process_group_id and recovery_state are exposed on HealthMonitorState, not this class. All four are only observable via the external monitor notification callback (comp_req_launch_man_ext_monitor_notify). The supervision fields (supervision_status, failed_supervision_type, etc.) are likewise observable via that callback, not via getters on this class.
+end note
+note bottom of HealthMonitorState
+  HealthMonitorState is populated by the external monitor notification callback. Its fields (except process_group_id and recovery_state, which are also callback-only) are supervision-related and mapped into score-lifecycle-state RawEvidenceSchema: supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count, process_execution_error, process_group_id, recovery_state.
 end note
 
 note right of HealthMonitorState

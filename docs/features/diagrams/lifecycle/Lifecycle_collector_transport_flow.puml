@@ -13,12 +13,11 @@ skinparam noteBackgroundColor #FFFFFF
 skinparam noteBorderColor #BFC0C0
 
 start
-:Launch Manager emits process life status
-(comp_req_launch_man_ext_monitor_notify);
-:Collector reads ProcessState / GraphState
-(ProcessInfoNode::getState(), Graph::getState());
-:Collector receives Health Monitor supervision status
-(supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count);
+:Launch Manager emits process life status via ext_monitor_notify
+(supervision + exit/error fields);
+:Collector reads ProcessState / GraphState / pid / run_target
+(ProcessInfoNode::getState(), Graph::getState(),
+ProcessInfoNode::getPid(), LM::get_run_target());
 #FFF1E9:VEL Lifecycle Collector maps fields
 (C++ binding to Launch Manager & Health Monitor API);
 :Produce raw state record
