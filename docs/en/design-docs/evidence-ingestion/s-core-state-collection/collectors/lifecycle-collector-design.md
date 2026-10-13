@@ -58,7 +58,7 @@ spec:
 - **Run target state**: which run target is active (string name, e.g. `"Startup"`, `"Off"`, `"Fallback"`).
 - **Component states**: started, running, stopped (per the Lifecycle Interface).
 - **Process health**: alive/liveliness, exit codes, resource usage.
-- **Process runtime identity**: process identifier (`pid`), exposed via the lifecycle API and surfaced in the schema as `details.pid`.
+- **Process runtime identity**: process identifier (`pid`), exposed via `ProcessInfoNode::getPid()` (see Section 2.4) and surfaced in the schema as `details.pid`.
 - **Ready conditions**: whether components have reached ready state (inferred from process state transitions).
 - **Health Monitor status**: deadline monitor, logic monitor, heartbeat monitor status. This includes the supervision status (ok/failed, derived from whether any per-type error is present), the supervision type that failed (heartbeat/deadline/logic), the specific per-type errors (deadline_error, heartbeat_error, logic_error), deadline violations, failed supervision cycles, alive indication counts, process execution errors, process group identity, and recovery state.
 
@@ -101,7 +101,7 @@ The class diagram below shows the VEL-side collector implementation classes (Lif
 
 ### 2.3 Lifecycle API Fields
 
-- **`pid` / `exit_code` / `process_execution_error`** — exposed through the lifecycle API via the external monitor notification API (the `comp_req__launch_man__ext_monitor_notify` requirement).
+- **`exit_code` / `process_execution_error`** — exposed through the lifecycle API via the external monitor notification API (the `comp_req__launch_man__ext_monitor_notify` requirement). `pid` is exposed via `ProcessInfoNode::getPid()`.
 - **Alive reporting** — the Health Monitor reports liveness to the Launch Manager through the Alive API (`report_alive()` / `report_failure()`). Note: this is a **write** path (the supervised process reports itself); VEL cannot use it to read another process's status.
 - **Health Monitor supervision types** — the Health Monitor evaluates three supervision types (deadline, heartbeat, logic), each with its own error enum and state snapshot, exposed through the external monitor notification API.
 
@@ -117,16 +117,23 @@ score::mw::lifecycle::GraphState graph_state = graph.getState();  // kSuccess, k
 // 2. For each process in the group, obtain its process state.
 score::mw::lifecycle::ProcessState proc_state = process_node.getState();  // kIdle, kStarting, kRunning, ...
 
-// 3. Exit code, PID, and process execution error are NOT exposed via getters on ProcessInfoNode
+// 3. Exit code and process execution error are NOT exposed via getters on ProcessInfoNode
 //    (its public API is limited to getPid(), getState(), getTerminationTimeout(),
 //    getControlClientChannel() -- there is no public getExitCode()). These fields are only
 //    observable through the external monitor notification callback payload
 //    (comp_req__launch_man__ext_monitor_notify), which the collector subscribes to.
+//    PID is exposed via ProcessInfoNode::getPid().
+//    process_group_id and recovery_state are exposed on HealthMonitorState (not on
+//    ProcessInfoNode) and are likewise only observable via the external monitor
+//    notification callback. All supervision fields (supervision_status,
+//    failed_supervision_type, deadline_error, heartbeat_error, logic_error,
+//    deadline_violation, failed_supervision_cycles, alive_indication_count) are also
+//    delivered via that callback.
 
 // 4. Collector maps these to a raw state record conforming to the score-lifecycle-state schema.
 ```
 
-The sequence below shows the full access-pattern interaction, including the external monitor notification callback path for `pid`/`exit_code`/`process_execution_error`:
+The sequence below shows the full access-pattern interaction, including the `ProcessInfoNode::getPid()` read path and the external monitor notification callback path for `exit_code`/`process_execution_error`:
 
 ![Lifecycle collector access pattern sequence](../../../../../features/assets/lifecycle/Lifecycle_collector_sequence.svg)
 
@@ -195,7 +202,7 @@ The static view below shows where the Lifecycle Collector sits in the VEL Eviden
 
 VEL can only collect data that S-CORE exposes through a **stable, public, external-facing API**. For the Lifecycle module:
 
-- **Allowed**: Reading `ProcessState`, `GraphState`, `pid`, `exit_code`, `process_execution_error`, and Health Monitor supervision status via the external monitor notification API.
+- **Allowed**: Reading `pid` via `ProcessInfoNode::getPid()`, and `ProcessState`, `GraphState`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, and Health Monitor supervision status (supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count) via the external monitor notification API.
 - **Not allowed**: Sending control commands (start/stop/restart processes), invoking `report_alive()` / `report_failure()` (write path), or any lifecycle/process/hardware control operations.
 
 This satisfies `saf_req__vel__*` (no lifecycle/process/container/hardware control, no coordination, no OEM decisions).

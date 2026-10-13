@@ -12,13 +12,14 @@
 | 실행 대상 (문자열 이름, 예: "Startup", "Off", "Fallback") | `RunTargetConfig.name` (임의 문자열, 고정 열거형 아님) |
 | 프로세스 그룹 / 종속성 그래프 상태 | `GraphState` 열거형 |
 | 프로세스 그룹 식별자 | `IdentifierHash` (문자열 기반; 섹션 2 참고) |
-| 프로세스 종료 코드, PID | Launch Manager 외부 모니터 알림 |
+| 프로세스 종료 코드 | Launch Manager 외부 모니터 알림 |
+| 프로세스 PID | `ProcessInfoNode::getPid()` |
 | Health Monitor 감독 상태 | 데드라인 / 로직 / 하트비트 모니터 상태, 집계됨 (VEL 파생) |
 | 복구 상태 | `recovery_state_` — 하드코딩된 `IdentifierHash("fallback")` (폴백 실행 대상 이름) |
 
-**VEL 수집기가 사용하는 S-CORE API:** Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
+**VEL 수집기가 사용하는 S-CORE API:** 폴링 상태용 `ProcessInfoNode::getPid()` / `getState()` / `Graph::getState()`, 이벤트 기반 필드 (exit_code, process_execution_error, process_group_id, recovery_state, 감독 필드)용 Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
 
-> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `pid`, `exit_code`, `process_execution_error`를 포함한 모든 라이프사이클 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
+> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `pid`는 `ProcessInfoNode::getPid()`를 통해 노출됩니다. `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state` 및 모든 Health Monitor 감독 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
 
 ## 2. 소스별 참고 사항
 

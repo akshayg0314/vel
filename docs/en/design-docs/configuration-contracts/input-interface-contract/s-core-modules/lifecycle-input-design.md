@@ -12,13 +12,14 @@
 | Run target (string name, e.g. "Startup", "Off", "Fallback") | `RunTargetConfig.name` (arbitrary string, not a fixed enum) |
 | Process group / dependency graph state | `GraphState` enum |
 | Process group identity | `IdentifierHash` (string-backed; see Section 2 note) |
-| Process exit code, PID | Launch Manager external monitor notification |
+| Process exit code | Launch Manager external monitor notification |
+| Process PID | `ProcessInfoNode::getPid()` |
 | Health Monitor supervision status | Deadline / logic / heartbeat monitor status, aggregated (VEL-derived) |
 | Recovery state | `recovery_state_` — hardcoded `IdentifierHash("fallback")` (fallback run target name) |
 
-**S-CORE API used by the VEL collector:** Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`).
+**S-CORE API used by the VEL collector:** `ProcessInfoNode::getPid()` / `getState()` / `Graph::getState()` for polled state, and the Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`) for event-driven fields (exit_code, process_execution_error, process_group_id, recovery_state, supervision fields).
 
-> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. All lifecycle fields — including `pid`, `exit_code`, and `process_execution_error` — are exposed through `comp_req__launch_man__ext_monitor_notify`. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
+> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. `pid` is exposed via `ProcessInfoNode::getPid()`. `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, and all Health Monitor supervision fields are exposed through `comp_req__launch_man__ext_monitor_notify`. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
 
 ## 2. Source-Specific Notes
 

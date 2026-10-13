@@ -58,7 +58,7 @@ spec:
 - **실행 대상 상태**: 활성 실행 대상 (문자열 이름, 예: `"Startup"`, `"Off"`, `"Fallback"`).
 - **컴포넌트 상태**: 시작됨, 실행 중, 중지됨 (Lifecycle 인터페이스 기준).
 - **프로세스 상태**: 활성/생존, 종료 코드, 리소스 사용량.
-- **프로세스 런타임 식별자**: 프로세스 식별자 (`pid`), lifecycle API를 통해 노출되며 스키마에서 `details.pid`로 표시됩니다.
+- **프로세스 런타임 식별자**: 프로세스 식별자 (`pid`), `ProcessInfoNode::getPid()`를 통해 노출되며 (섹션 2.4 참조) 스키마에서 `details.pid`로 표시됩니다.
 - **준비 조건**: 컴포넌트가 준비 상태에 도달했는지 여부 (프로세스 상태 전환에서 유추).
 - **Health Monitor 상태**: 데드라인 모니터, 로직 모니터, 하트비트 모니터 상태. 감독 상태 (ok/failed, 유형별 오류 존재 여부에서 파생), 실패한 감독 유형 (heartbeat/deadline/logic), 특정 유형별 오류 (deadline_error, heartbeat_error, logic_error), 데드라인 위반, 실패한 감독 주기, 활성 표시 횟수, 프로세스 실행 오류, 프로세스 그룹 식별자, 복구 상태를 포함합니다.
 
@@ -101,7 +101,7 @@ spec:
 
 ### 2.3 Lifecycle API 필드
 
-- **`pid` / `exit_code` / `process_execution_error`** — lifecycle API를 통해 외부 모니터 알림 API (`comp_req__launch_man__ext_monitor_notify` 요구사항)로 노출됩니다.
+- **`exit_code` / `process_execution_error`** — lifecycle API를 통해 외부 모니터 알림 API (`comp_req__launch_man__ext_monitor_notify` 요구사항)로 노출됩니다. `pid`는 `ProcessInfoNode::getPid()`를 통해 노출됩니다.
 - **활성 보고** — Health Monitor는 Alive API (`report_alive()` / `report_failure()`)를 통해 Launch Manager에 생존을 보고합니다. 참고: 이는 **쓰기** 경로입니다 (감독되는 프로세스가 자체적으로 보고). VEL은 이를 사용하여 다른 프로세스의 상태를 읽을 수 없습니다.
 - **Health Monitor 감독 유형** — Health Monitor는 세 가지 감독 유형 (데드라인, 하트비트, 로직)을 평가하며, 각각 고유한 오류 열거형과 상태 스냅샷을 가지며 외부 모니터 알림 API를 통해 노출됩니다.
 
@@ -117,16 +117,23 @@ score::mw::lifecycle::GraphState graph_state = graph.getState();  // kSuccess, k
 // 2. 그룹의 각 프로세스에 대해 프로세스 상태를 얻습니다.
 score::mw::lifecycle::ProcessState proc_state = process_node.getState();  // kIdle, kStarting, kRunning, ...
 
-// 3. 종료 코드, PID, 프로세스 실행 오류는 ProcessInfoNode의 getter로 노출되지 않습니다
+// 3. 종료 코드와 프로세스 실행 오류는 ProcessInfoNode의 getter로 노출되지 않습니다
 //    (공개 API는 getPid(), getState(), getTerminationTimeout(),
 //    getControlClientChannel()로 제한됨 — 공개 getExitCode() 없음). 이러한 필드는
 //    수집기가 구독하는 외부 모니터 알림 콜백 페이로드
 //    (comp_req__launch_man__ext_monitor_notify)를 통해서만 관찰할 수 있습니다.
+//    PID는 ProcessInfoNode::getPid()를 통해 노출됩니다.
+//    process_group_id와 recovery_state는 HealthMonitorState에 노출되며
+//    (ProcessInfoNode가 아님) 마찬가지로 외부 모니터 알림 콜백을 통해서만
+//    관찰할 수 있습니다. 모든 감독 필드 (supervision_status,
+//    failed_supervision_type, deadline_error, heartbeat_error, logic_error,
+//    deadline_violation, failed_supervision_cycles, alive_indication_count)도
+//    해당 콜백을 통해 전달됩니다.
 
 // 4. 수집기는 이를 score-lifecycle-state 스키마를 준수하는 원시 상태 레코드로 매핑합니다.
 ```
 
-아래 시퀀스는 `pid`/`exit_code`/`process_execution_error`에 대한 외부 모니터 알림 콜백 경로를 포함한 전체 접근 패턴 상호작용을 보여줍니다:
+아래 시퀀스는 `ProcessInfoNode::getPid()` 읽기 경로와 `exit_code`/`process_execution_error`에 대한 외부 모니터 알림 콜백 경로를 포함한 전체 접근 패턴 상호작용을 보여줍니다:
 
 ![Lifecycle 수집기 접근 패턴 시퀀스](../../../../../features/assets/lifecycle/Lifecycle_collector_sequence.svg)
 
@@ -195,7 +202,7 @@ score::mw::lifecycle::ProcessState proc_state = process_node.getState();  // kId
 
 VEL은 S-CORE가 **안정적이고 공개된 외부 API**를 통해 노출하는 데이터만 수집할 수 있습니다. Lifecycle 모듈의 경우:
 
-- **허용**: 외부 모니터 알림 API를 통해 `ProcessState`, `GraphState`, `pid`, `exit_code`, `process_execution_error`, Health Monitor 감독 상태 읽기.
+- **허용**: `ProcessInfoNode::getPid()`를 통해 `pid`, 외부 모니터 알림 API를 통해 `ProcessState`, `GraphState`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, Health Monitor 감독 상태 (supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count) 읽기.
 - **허용되지 않음**: 제어 명령 전송 (프로세스 시작/중지/재시작), `report_alive()` / `report_failure()` 호출 (쓰기 경로), 또는 모든 라이프사이클/프로세스/하드웨어 제어 작업.
 
 이는 `saf_req__vel__*` (라이프사이클/프로세스/컨테이너/하드웨어 제어 없음, 조정 없음, OEM 결정 없음)를 충족합니다.
