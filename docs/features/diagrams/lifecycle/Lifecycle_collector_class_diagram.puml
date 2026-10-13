@@ -1,0 +1,266 @@
+@startuml
+title S-CORE Lifecycle Collector | Class Diagram (LLD)
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam classBorderColor #2D3142
+skinparam classBackgroundColor #FFFFFF
+skinparam classFontColor #2D3142
+skinparam classAttributeFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+skinparam packageBorderColor #2D3142
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageFontColor #2D3142
+
+package "VEL Evidence Ingestion (S-CORE State Collection)" {
+
+  package "Collector Hierarchy" {
+    abstract class SourceCollector {
+      +collector_id : string
+      +source_ref : string
+      +collection_trigger : CollectionTrigger
+      +collection_window : object
+      +parameters : object
+      +collect() : raw_state_records
+      +get_metadata() : collection_metadata
+      +get_diagnostics() : diagnostics
+      +health_probe() : health_status
+    }
+
+    abstract class SCoreCollector {
+      +source_ref : string = "score.<module>"
+      +collector_id : string = "<module>-collector"
+      +transport : Transport = s-core-api
+    }
+
+    class LifecycleCollector {
+      +collector_id : string = "lifecycle-collector"
+      +source_ref : string = "score.lifecycle"
+    }
+
+    SourceCollector <|-- SCoreCollector : extends
+    SCoreCollector <|-- LifecycleCollector : extends
+
+    note right of SourceCollector
+      • Common VEL collector interface (all source categories)
+      • I/O API per source-collector-interface-design.md Sec 3
+      • Lifecycle state machine per Sec 4.1
+      • Error taxonomy per Sec 5.1
+    end note
+
+    note right of SCoreCollector
+      • S-CORE-specific conventions on top of SourceCollector
+      • Naming: source_ref=score.<module>, collector_id=<module>-collector
+      • Transport: s-core-api
+      • See s-core-collector-common-design.md
+    end note
+
+    note right of LifecycleCollector
+      • Concrete module collector for S-CORE Lifecycle
+      • Inherits common I/O API + S-CORE conventions
+      • source_ref=score.lifecycle, collector_id=lifecycle-collector
+    end note
+  }
+
+  package "Supporting Classes" {
+    class LifecycleStateReader {
+      -transport : s-core-api = lifecycle-state-api
+      +read_graph_state() : GraphState
+      +read_process_state() : ProcessState
+      +read_run_target() : string
+      +read_pid() : uint32
+      +read_exit_code() : int32
+      +read_process_exec_error() : uint32
+      +read_process_group_id() : string
+      +read_recovery_state() : string
+      +read_supervision_status() : SupervisionStatus
+      +read_failed_supervision_type() : FailedSupervisionType
+      +read_per_type_error() : DeadlineError | HeartbeatError | LogicError
+      +read_failed_supervision_cycles() : uint32
+      +read_deadline_violation() : bool
+      +read_alive_indication_count() : uint32
+    }
+
+    class LifecycleStateMapper {
+      +map_to_raw_record() : ScoreLifecycleState
+      +map_field(path : string) : any
+      +validate_required_fields() : bool
+    }
+
+    class CollectorDiagnostics {
+      +error_code : string
+      +error_category : ErrorCategory
+      +severity : Severity
+      +message : string
+      +retry_count : uint32
+      +recovery_hint : string
+      +emit() : AdapterDiagnostic
+    }
+
+    LifecycleCollector ..> LifecycleStateReader : uses
+    LifecycleCollector ..> LifecycleStateMapper : uses
+    LifecycleCollector ..> CollectorDiagnostics : reports via
+    LifecycleStateMapper ..> LifecycleStateReader : consumes raw state
+
+    note right of LifecycleStateReader
+      • Wraps S-CORE API: getState(), getPid(), ext_monitor_notify, supervision
+      • Read-only
+    end note
+
+    note right of LifecycleStateMapper
+      • Maps S-CORE state to score-lifecycle-state schema (24 fields)
+      • Normalization done downstream
+    end note
+
+    note right of CollectorDiagnostics
+      • error_category: ErrorCategory enum
+        (CONFIGURATION_ERROR ... INTERNAL_ERROR)
+      • severity: Severity enum (INFO ... FATAL)
+      • emit() produces AdapterDiagnostic
+      • See source-collector-interface-design.md Sec 5
+    end note
+  }
+
+  package "Enums" {
+    enum CollectionTrigger {
+      PERIODIC
+      EVENT
+      ON_DEMAND
+    }
+
+    enum Transport {
+      S_CORE_API
+      DDS
+      FILE
+      COMMAND
+      OS_INTERFACE
+    }
+
+    enum ErrorCategory {
+      CONFIGURATION_ERROR
+      SOURCE_UNAVAILABLE
+      AUTHENTICATION_ERROR
+      TIMEOUT
+      SCHEMA_VIOLATION
+      NORMALIZATION_ERROR
+      RESOURCE_EXHAUSTION
+      INTERNAL_ERROR
+    }
+
+    enum Severity {
+      INFO
+      WARNING
+      ERROR
+      FATAL
+    }
+
+    enum CollectorLifecycleState {
+      PROVISIONED
+      ACTIVE
+      RUNNING
+      SUSPENDED
+      ERROR
+      TERMINATED
+    }
+
+    SourceCollector --> CollectionTrigger : collection_trigger
+    SourceCollector --> CollectorLifecycleState : lifecycle state
+    SCoreCollector --> Transport : transport
+    CollectorDiagnostics --> ErrorCategory : error_category
+    CollectorDiagnostics --> Severity : severity
+  }
+}
+
+package "S-CORE Lifecycle (source-side types)" {
+  enum ProcessState {
+    kIdle = 0
+    kStarting = 1
+    kRunning = 2
+    kTerminating = 3
+    kTerminated = 4
+    kFailed = 5
+  }
+
+  enum GraphState {
+    kSuccess = 0
+    kInTransition = 1
+    kAborting = 2
+    kCancelled = 3
+    kUndefinedState = 4
+  }
+
+  enum SupervisionStatus {
+    kOk = 0
+    kFailed = 1
+  }
+
+  enum FailedSupervisionType {
+    kHeartbeat = 0
+    kDeadline = 1
+    kLogic = 2
+  }
+
+  enum DeadlineError {
+    kTooEarly = 0
+    kTooLate = 1
+  }
+
+  enum HeartbeatError {
+    kTooEarly = 0
+    kTooLate = 1
+    kMultipleHeartbeats = 2
+  }
+
+  enum LogicError {
+    kInvalidState = 0
+    kInvalidTransition = 1
+    kUnmappedError = 2
+  }
+
+  class ProcessInfoNode {
+    +getPid() : osal::ProcessID
+    +getState() : ProcessState
+    +getTerminationTimeout() : milliseconds
+    +getControlClientChannel() : ControlClientChannelP
+  }
+
+  class HealthMonitorState {
+    +supervision_status : SupervisionStatus
+    +failed_supervision_type : FailedSupervisionType
+    +deadline_error : DeadlineError
+    +heartbeat_error : HeartbeatError
+    +logic_error : LogicError
+    +failed_supervision_cycles : uint32
+    +deadline_violation : bool
+    +alive_indication_count : uint32
+    +process_execution_error : uint32
+    +process_group_id : string
+    +recovery_state : string
+  }
+
+  ProcessInfoNode --> ProcessState : getState()
+  HealthMonitorState --> SupervisionStatus : supervision_status
+  HealthMonitorState --> FailedSupervisionType : failed_supervision_type
+  HealthMonitorState --> DeadlineError : deadline_error
+  HealthMonitorState --> HeartbeatError : heartbeat_error
+  HealthMonitorState --> LogicError : logic_error
+}
+
+LifecycleStateReader ..> ProcessState : reads
+LifecycleStateReader ..> GraphState : reads
+LifecycleStateReader ..> ProcessInfoNode : reads via getState()/getPid()
+LifecycleStateReader ..> HealthMonitorState : reads supervision
+
+
+note bottom of LifecycleStateReader
+  • pid via ProcessInfoNode::getPid()
+  • exit_code/process_exec_error NOT exposed via ProcessInfoNode getters;
+    process_group_id/recovery_state/supervision fields exposed on
+    HealthMonitorState (also not via ProcessInfoNode getters) -- all via
+    ext_monitor_notify callback only
+  • See lifecycle-collector-design.md Sec 2.4
+end note
+
+@enduml

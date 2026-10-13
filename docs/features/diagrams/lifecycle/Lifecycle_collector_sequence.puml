@@ -5,49 +5,60 @@ skinparam shadowing false
 skinparam roundCorner 8
 skinparam ArrowColor #4F5D75
 skinparam sequenceParticipantBorderColor #2D3142
-skinparam sequenceParticipantBackgroundColor #FFFFFF
 skinparam sequenceParticipantFontColor #2D3142
 skinparam sequenceLifeLineBorderColor #7A8399
 skinparam noteBackgroundColor #FFFFFF
 skinparam noteBorderColor #BFC0C0
 
-participant "Launch Manager" as LM
-participant "Health Monitor" as HM
-participant "Graph /\nProcessInfoNode" as State
-participant "VEL Lifecycle\nCollector" as Collector
-participant "Schema Validator" as Validator
-participant "Normalization\nProcessor" as Normalizer
-participant "Vehicle Evidence\nPublisher" as Publisher
+' S-CORE source-side participants (blue/teal)
+participant "Launch Manager" as LM #A8D8EA
+participant "Graph /\nProcessInfoNode" as State #A8D8EA
+
+' VEL Evidence Ingestion participants (green/amber)
+participant "VEL Lifecycle\nCollector" as Collector #C5E1A5
+participant "Schema Validator" as Validator #C5E1A5
+participant "Normalization\nProcessor" as Normalizer #C5E1A5
+participant "Vehicle Evidence\nPublisher" as Publisher #C5E1A5
 
 Collector -> State : graph.getState()
 State --> Collector : GraphState (kSuccess, kInTransition, ...)
 Collector -> State : process_node.getState()
 State --> Collector : ProcessState (kIdle, kStarting, kRunning, ...)
+Collector -> State : process_node.getPid()
+State --> Collector : pid (osal::ProcessID)
+Collector -> LM : get_run_target()
+LM --> Collector : run_target (string — e.g. "Startup", "Off", "Fallback")
 
-note over Collector, LM
-pid / exit_code / process_execution_error are NOT exposed via a getter;
-they arrive only through the external monitor notification callback.
+LM -> Collector : ext_monitor_notify callback\n(supervision + exit/error fields)
+note right of Collector
+  * ext_monitor_notify payload:
+  * exit_code, process_execution_error
+  * supervision_status, failed_supervision_type
+  * failed_supervision_cycles, deadline_error
+  * heartbeat_error, logic_error, deadline_violation
+  * alive_indication_count, process_group_id
+  * recovery_state
 end note
 
-LM -> Collector : ext_monitor_notify callback\n(pid, exit_code, process_execution_error)
-HM -> Collector : supervision status\n(supervision_status, failed_supervision_type,\nfailed_supervision_cycles, deadline_error,\nheartbeat_error, logic_error,\ndeadline_violation, alive_indication_count)
-
 Collector -> Collector : map fields to raw state record\n(score-lifecycle-state schema)
-Collector -> Validator : raw state record
+Collector -> Collector : produce collection_metadata\n(timestamp, duration, record count)
+Collector -> Validator : raw state record + collection_metadata
 alt schema-valid
   Validator --> Collector : schema-valid
   Collector -> Normalizer : validated raw state record
   Normalizer -> Publisher : normalized Vehicle Evidence
   Publisher -> Publisher : DDS publish\n(ScoreNormalizedEvidence, reliable)
   note right of Publisher
-    DDS reliable delivery: the transport layer
-    guarantees delivery asynchronously.
-    The Collector monitors VEL health via the
-    separate ScoreEvidenceLayerHealth topic
-    (not via a synchronous ack from Publisher).
+    * DDS reliable delivery: transport layer
+      guarantees async delivery
+    * Collector monitors VEL health via
+      ScoreEvidenceLayerHealth topic
+    * No synchronous ack from Publisher
   end note
 else schema-invalid / reject
   Validator --> Collector : reject + AdapterDiagnostic
   Collector -> Collector : drop record,\nemit diagnostic
 end
+
+Collector -> Collector : update health_status\n(state, last_collection, collection_count,\nerror_count, last_error, uptime_seconds)
 @enduml

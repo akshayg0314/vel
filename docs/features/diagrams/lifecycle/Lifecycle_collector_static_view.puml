@@ -1,0 +1,74 @@
+@startuml
+title S-CORE Lifecycle Collector | Static View (HLD)
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam componentBorderColor #2D3142
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentFontColor #2D3142
+skinparam packageBorderColor #2D3142
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+
+package "S-CORE (source)" {
+  component "Launch Manager" as LM
+  component "Health Monitor (PHM)" as HM
+  component "ProcessInfoNode" as PIN
+  component "GraphState" as GS
+}
+
+package "VEL Evidence Ingestion" {
+  component "Lifecycle Collector" as Collector
+}
+
+package "VEL Evidence Processing" {
+  component "Schema Validator" as Validator
+  component "Normalization Processor" as Normalizer
+}
+
+package "VEL Evidence Output" {
+  component "Vehicle Evidence Publisher" as Publisher
+}
+
+package "DDS Transport" {
+  component "ScoreNormalizedEvidence\nTopic" as Topic
+}
+
+HM --> LM : supervision status\n(supervision fields)
+LM --> Collector : ext_monitor_notify\n(supervision + exit/error fields)
+Collector --> PIN : getPid()\n(pid via ProcessInfoNode::getPid)
+Collector --> PIN : getState()\n(ProcessState)
+Collector --> GS : getState()\n(GraphState)
+Collector --> LM : getRunTarget()\n(run_target: Startup, Off, Fallback)
+
+Collector --> Validator : raw state record\n(score-lifecycle-state)
+Validator --> Normalizer : validated raw state
+Normalizer --> Publisher : normalized Vehicle Evidence
+Publisher --> Topic : DDS publish (reliable)
+
+note right of Collector
+  * LifecycleCollector extends SCoreCollector
+    (s-core-collector-common-design.md)
+  * SCoreCollector extends SourceCollector
+    (source-collector-interface-design.md)
+  * Read-only: never sends control commands to S-CORE
+  * ext_monitor_notify payload:
+  * exit_code, process_execution_error
+  * supervision_status, failed_supervision_type
+  * failed_supervision_cycles, deadline_error
+  * heartbeat_error, logic_error, deadline_violation
+  * alive_indication_count, process_group_id
+  * recovery_state
+end note
+
+note bottom of Topic
+  Publication topic per lifecycle-collector.yaml:
+  transport=dds, topic=ScoreNormalizedEvidence,
+  deliveryClass=reliable. Health heartbeat on
+  ScoreEvidenceLayerHealth.
+end note
+
+@enduml
