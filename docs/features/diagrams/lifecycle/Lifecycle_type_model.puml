@@ -1,5 +1,6 @@
 @startuml
 title S-CORE Lifecycle | Type Model (Process / Recovery / Health Monitor)
+left to right direction
 skinparam backgroundColor #F5F5F5
 skinparam shadowing false
 skinparam roundCorner 8
@@ -10,6 +11,8 @@ skinparam classFontColor #2D3142
 skinparam classAttributeFontColor #2D3142
 skinparam noteBackgroundColor #FFFFFF
 skinparam noteBorderColor #BFC0C0
+skinparam nodesep 30
+skinparam ranksep 30
 
 enum ProcessState {
   kIdle = 0
@@ -77,6 +80,20 @@ class ProcessInfoNode {
   +getControlClientChannel() : ControlClientChannelP
 }
 
+class DeploymentConfig {
+  +ready_timeout_ms : uint32
+  +shutdown_timeout_ms : uint32
+  +ready_recovery_action : optional<RestartAction>
+  +recovery_action : optional<SwitchRunTargetAction>
+}
+
+class ComponentConfig {
+  +name : string
+  +description : string
+  +component_properties : ComponentProperties
+  +deployment_config : DeploymentConfig
+}
+
 class RestartAction {
   +number_of_attempts : uint32
   +delay_before_restart_ms : uint32
@@ -86,40 +103,32 @@ class SwitchRunTargetAction {
   +run_target : string
 }
 
-class ComponentConfig {
-  +ready_recovery_action : optional<RestartAction>
-  +recovery_action : optional<SwitchRunTargetAction>
-}
-
 ProcessInfoNode --> ProcessState : getState()
 HealthMonitorState --> SupervisionStatus : supervision_status
 HealthMonitorState --> FailedSupervisionType : failed_supervision_type
 HealthMonitorState --> DeadlineError : deadline_error
 HealthMonitorState --> HeartbeatError : heartbeat_error
 HealthMonitorState --> LogicError : logic_error
-ComponentConfig "1" o-- "0..1" RestartAction : ready_recovery_action
-ComponentConfig "1" o-- "0..1" SwitchRunTargetAction : recovery_action
+' Composition relationships are implicit in the field declarations above
+' (e.g., DeploymentConfig.ready_recovery_action : optional<RestartAction>)
+' No explicit arrows needed since the field types are visible in the class bodies.
 
-note right of ComponentConfig
-RestartAction and SwitchRunTargetAction are two
-DISTINCT config structs in two DIFFERENT optional
-slots -- not a tagged union / single enum.
-Only one slot is populated per component config.
+note left of DeploymentConfig
+  * Two DISTINCT structs in two optional slots
+  * Not a tagged union / single enum
+  * Only one slot populated per config
 end note
 
-note bottom of ProcessInfoNode
-  pid is exposed via getPid(). exit_code and process_execution_error are NOT exposed via getters on this class; process_group_id and recovery_state are exposed on HealthMonitorState, not this class. All four are only observable via the external monitor notification callback (comp_req_launch_man_ext_monitor_notify). The supervision fields (supervision_status, failed_supervision_type, etc.) are likewise observable via that callback, not via getters on this class.
-end note
-note bottom of HealthMonitorState
-  HealthMonitorState is populated by the external monitor notification callback. Its fields (except process_group_id and recovery_state, which are also callback-only) are supervision-related and mapped into score-lifecycle-state RawEvidenceSchema: supervision_status, failed_supervision_type, deadline_error, heartbeat_error, logic_error, deadline_violation, failed_supervision_cycles, alive_indication_count, process_execution_error, process_group_id, recovery_state.
+note left of ProcessInfoNode
+  * pid exposed via getPid()
+  * exit_code, process_execution_error: no getter
+  * process_group_id, recovery_state: on HealthMonitorState
+  * All 4 via ext_monitor_notify callback
+  * Supervision fields: callback-only
 end note
 
 note right of HealthMonitorState
-Health Monitor supervision fields map to
-score-lifecycle-state RawEvidenceSchema
-(supervision_status, failed_supervision_type,
-deadline_error, heartbeat_error, logic_error,
-deadline_violation, failed_supervision_cycles,
-alive_indication_count).
+  * Populated by ext_monitor_notify callback
+  * All fields map to score-lifecycle-state schema
 end note
 @enduml
