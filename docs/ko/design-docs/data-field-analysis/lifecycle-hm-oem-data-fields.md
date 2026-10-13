@@ -112,6 +112,8 @@
 | Evidence 유형 | 소스 필드 |
 |---------------|-----------------|
 | `s-core.lifecycle.component.state` | `state` |
+| `s-core.lifecycle.component.previous_state` | `previous_state` |
+| `s-core.lifecycle.component.transition_time` | `transition_time_ns` |
 | `s-core.lifecycle.process-group.state` | `graph_state` |
 | `s-core.lifecycle.process.exit_code` | `exit_code` |
 | `s-core.lifecycle.process.pid` | `pid` |

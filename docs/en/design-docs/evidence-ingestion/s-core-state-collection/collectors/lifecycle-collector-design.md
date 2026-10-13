@@ -93,7 +93,7 @@ The diagram below shows `ProcessState`, `GraphState`, the recovery-action config
 
 [PlantUML source](../../../../../features/diagrams/lifecycle/Lifecycle_type_model.puml)
 
-The class diagram below shows the VEL-side collector implementation classes (LifecycleCollector, LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics) and the source-side S-CORE types they read:
+The class diagram below shows the VEL-side collector implementation classes. `LifecycleCollector` extends the common `SCoreCollector` (S-CORE-specific conventions) which in turn extends the abstract `SourceCollector` (common VEL collector interface). It also shows the supporting classes (LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics) and the source-side S-CORE types they read:
 
 ![Lifecycle collector class diagram](../../../../../features/assets/lifecycle/Lifecycle_collector_class_diagram.svg)
 

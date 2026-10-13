@@ -8,7 +8,7 @@ artifacts:
   - path: collectors/lifecycle-collector.yaml
     digest: 3630e47925727b2404f9a407da4d9edc3497ad33d98f82101babab8745c0a4e9
   - path: schemas/score-lifecycle-state-v1.0.0.yaml
-    digest: 060499b2930472318da9b11627967322258b4daa23875631ac50fa0f5f690891
+    digest: 6d8bd4aad3e9a0bc7bf831d77c55bdf70584a15a7c023ff751b141e9cbfd7ef9
   - path: mappings/score-lifecycle-to-evidence-v1.0.0.yaml
     digest: 1ade31e685adf7f7c5c1edeb9baeb6b2a5960675586b78a6e1606c32c38095b2
   - path: tests/lifecycle-normalization-vectors.yaml

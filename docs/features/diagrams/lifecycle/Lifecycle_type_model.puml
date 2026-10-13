@@ -14,121 +14,129 @@ skinparam noteBorderColor #BFC0C0
 skinparam nodesep 30
 skinparam ranksep 30
 
-enum ProcessState {
-  kIdle = 0
-  kStarting = 1
-  kRunning = 2
-  kTerminating = 3
-  kTerminated = 4
-  kFailed = 5
+package "Process & Graph State" {
+  enum ProcessState {
+    kIdle = 0
+    kStarting = 1
+    kRunning = 2
+    kTerminating = 3
+    kTerminated = 4
+    kFailed = 5
+  }
+
+  enum GraphState {
+    kSuccess = 0
+    kInTransition = 1
+    kAborting = 2
+    kCancelled = 3
+    kUndefinedState = 4
+  }
+
+  class ProcessInfoNode {
+    +getPid() : osal::ProcessID
+    +getState() : ProcessState
+    +getTerminationTimeout() : milliseconds
+    +getControlClientChannel() : ControlClientChannelP
+  }
+
+  ProcessInfoNode --> ProcessState : getState()
+
+  note left of ProcessInfoNode
+    * pid exposed via getPid()
+    * exit_code, process_execution_error: no getter
+    * process_group_id, recovery_state: on HealthMonitorState
+    * All 4 via ext_monitor_notify callback
+    * Supervision fields: callback-only
+  end note
 }
 
-enum GraphState {
-  kSuccess = 0
-  kInTransition = 1
-  kAborting = 2
-  kCancelled = 3
-  kUndefinedState = 4
+package "Health Monitor State" {
+  enum SupervisionStatus {
+    kOk = 0
+    kFailed = 1
+  }
+
+  enum FailedSupervisionType {
+    kHeartbeat = 0
+    kDeadline = 1
+    kLogic = 2
+  }
+
+  enum DeadlineError {
+    kTooEarly = 0
+    kTooLate = 1
+  }
+
+  enum HeartbeatError {
+    kTooEarly = 0
+    kTooLate = 1
+    kMultipleHeartbeats = 2
+  }
+
+  enum LogicError {
+    kInvalidState = 0
+    kInvalidTransition = 1
+    kUnmappedError = 2
+  }
+
+  class HealthMonitorState {
+    +supervision_status : SupervisionStatus
+    +failed_supervision_type : FailedSupervisionType
+    +failed_supervision_cycles : uint32
+    +deadline_error : DeadlineError
+    +heartbeat_error : HeartbeatError
+    +logic_error : LogicError
+    +deadline_violation : bool
+    +alive_indication_count : uint32
+    +process_execution_error : uint32
+    +process_group_id : string
+    +recovery_state : string
+  }
+
+  HealthMonitorState --> SupervisionStatus : supervision_status
+  HealthMonitorState --> FailedSupervisionType : failed_supervision_type
+  HealthMonitorState --> DeadlineError : deadline_error
+  HealthMonitorState --> HeartbeatError : heartbeat_error
+  HealthMonitorState --> LogicError : logic_error
+
+  note right of HealthMonitorState
+    * Populated by ext_monitor_notify callback
+    * All fields map to score-lifecycle-state schema
+  end note
 }
 
-enum SupervisionStatus {
-  kOk = 0
-  kFailed = 1
+package "Deployment & Recovery Config" {
+  class DeploymentConfig {
+    +ready_timeout_ms : uint32
+    +shutdown_timeout_ms : uint32
+    +ready_recovery_action : optional<RestartAction>
+    +recovery_action : optional<SwitchRunTargetAction>
+  }
+
+  class ComponentConfig {
+    +name : string
+    +description : string
+    +component_properties : ComponentProperties
+    +deployment_config : DeploymentConfig
+  }
+
+  class RestartAction {
+    +number_of_attempts : uint32
+    +delay_before_restart_ms : uint32
+  }
+
+  class SwitchRunTargetAction {
+    +run_target : string
+  }
+
+  ' Composition relationships are implicit in the field declarations above
+  ' (e.g., DeploymentConfig.ready_recovery_action : optional<RestartAction>)
+  ' No explicit arrows needed since the field types are visible in the class bodies.
+
+  note left of DeploymentConfig
+    * Two DISTINCT structs in two optional slots
+    * Not a tagged union / single enum
+    * Only one slot populated per config
+  end note
 }
-
-enum FailedSupervisionType {
-  kHeartbeat = 0
-  kDeadline = 1
-  kLogic = 2
-}
-
-enum DeadlineError {
-  kTooEarly = 0
-  kTooLate = 1
-}
-
-enum HeartbeatError {
-  kTooEarly = 0
-  kTooLate = 1
-  kMultipleHeartbeats = 2
-}
-
-enum LogicError {
-  kInvalidState = 0
-  kInvalidTransition = 1
-  kUnmappedError = 2
-}
-
-class HealthMonitorState {
-  +supervision_status : SupervisionStatus
-  +failed_supervision_type : FailedSupervisionType
-  +failed_supervision_cycles : uint32
-  +deadline_error : DeadlineError
-  +heartbeat_error : HeartbeatError
-  +logic_error : LogicError
-  +deadline_violation : bool
-  +alive_indication_count : uint32
-  +process_execution_error : uint32
-  +process_group_id : string
-  +recovery_state : string
-}
-
-class ProcessInfoNode {
-  +getPid() : osal::ProcessID
-  +getState() : ProcessState
-  +getTerminationTimeout() : milliseconds
-  +getControlClientChannel() : ControlClientChannelP
-}
-
-class DeploymentConfig {
-  +ready_timeout_ms : uint32
-  +shutdown_timeout_ms : uint32
-  +ready_recovery_action : optional<RestartAction>
-  +recovery_action : optional<SwitchRunTargetAction>
-}
-
-class ComponentConfig {
-  +name : string
-  +description : string
-  +component_properties : ComponentProperties
-  +deployment_config : DeploymentConfig
-}
-
-class RestartAction {
-  +number_of_attempts : uint32
-  +delay_before_restart_ms : uint32
-}
-
-class SwitchRunTargetAction {
-  +run_target : string
-}
-
-ProcessInfoNode --> ProcessState : getState()
-HealthMonitorState --> SupervisionStatus : supervision_status
-HealthMonitorState --> FailedSupervisionType : failed_supervision_type
-HealthMonitorState --> DeadlineError : deadline_error
-HealthMonitorState --> HeartbeatError : heartbeat_error
-HealthMonitorState --> LogicError : logic_error
-' Composition relationships are implicit in the field declarations above
-' (e.g., DeploymentConfig.ready_recovery_action : optional<RestartAction>)
-' No explicit arrows needed since the field types are visible in the class bodies.
-
-note left of DeploymentConfig
-  * Two DISTINCT structs in two optional slots
-  * Not a tagged union / single enum
-  * Only one slot populated per config
-end note
-
-note left of ProcessInfoNode
-  * pid exposed via getPid()
-  * exit_code, process_execution_error: no getter
-  * process_group_id, recovery_state: on HealthMonitorState
-  * All 4 via ext_monitor_notify callback
-  * Supervision fields: callback-only
-end note
-
-note right of HealthMonitorState
-  * Populated by ext_monitor_notify callback
-  * All fields map to score-lifecycle-state schema
-end note
 @enduml

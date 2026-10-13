@@ -93,7 +93,7 @@ spec:
 
 [PlantUML 소스](../../../../../features/diagrams/lifecycle/Lifecycle_type_model.puml)
 
-아래 클래스 다이어그램은 VEL 측 수집기 구현 클래스 (LifecycleCollector, LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics)와 이들이 읽는 소스 측 S-CORE 유형을 보여줍니다:
+아래 클래스 다이어그램은 VEL 측 수집기 구현 클래스를 보여줍니다. `LifecycleCollector`는 공통 `SCoreCollector` (S-CORE 특정 규칙)를 확장하며, 이는 다시 추상 `SourceCollector` (공통 VEL 수집기 인터페이스)를 확장합니다. 또한 지원 클래스 (LifecycleStateReader, LifecycleStateMapper, CollectorDiagnostics)와 이들이 읽는 소스 측 S-CORE 유형을 보여줍니다:
 
 ![Lifecycle 수집기 클래스 다이어그램](../../../../../features/assets/lifecycle/Lifecycle_collector_class_diagram.svg)
 
