@@ -16,8 +16,6 @@ skinparam noteBorderColor #BFC0C0
 package "S-CORE (source)" {
   component "Launch Manager" as LM
   component "Health Monitor (PHM)" as HM
-  component "ProcessInfoNode" as PIN
-  component "GraphState" as GS
 }
 
 package "VEL Evidence Ingestion" {
@@ -38,11 +36,8 @@ package "DDS Transport" {
 }
 
 HM --> LM : supervision status\n(supervision fields)
-LM --> Collector : ext_monitor_notify\n(supervision + exit/error fields)
-Collector --> PIN : getPid()\n(pid via ProcessInfoNode::getPid)
-Collector --> PIN : getState()\n(ProcessState)
-Collector --> GS : getState()\n(GraphState)
-Collector --> LM : getRunTarget()\n(run_target: Startup, Off, Fallback)
+LM --> Collector : ext_monitor_notify\n(ProcessMonitorNotify payload:\nstate, pid, graph_state,\nsupervision + exit/error fields)
+Collector --> LM : get_active_run_target()\n(run_target: Startup, Off, Fallback)
 
 Collector --> Validator : raw state record\n(score-lifecycle-state)
 Validator --> Normalizer : validated raw state
@@ -54,8 +49,15 @@ note right of Collector
     (s-core-collector-common-design.md)
   * SCoreCollector extends SourceCollector
     (source-collector-interface-design.md)
+  * Internally delegates to LifecycleFieldBindings
+    (Lifecycle-specific) and the shared
+    ConfigDrivenStateMapper -- see
+    Collector_common_class_diagram.puml and
+    Lifecycle_collector_class_diagram.puml for the
+    class-level detail collapsed here
   * Read-only: never sends control commands to S-CORE
-  * ext_monitor_notify payload:
+  * ext_monitor_notify payload (ProcessMonitorNotify):
+  * state (ProcessState), pid, graph_state
   * exit_code, process_execution_error
   * supervision_status, failed_supervision_type
   * failed_supervision_cycles, deadline_error

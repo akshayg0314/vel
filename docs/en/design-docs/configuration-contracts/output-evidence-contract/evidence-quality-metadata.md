@@ -1,7 +1,7 @@
 # Evidence Quality Metadata Fields
 
 > **Related:** FR-VEL-009 (Evidence Quality Metadata), STKH-VEL-009
-> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. Purpose
 
@@ -98,4 +98,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-009, STKH-VEL-009 |
-| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

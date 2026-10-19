@@ -57,15 +57,28 @@
 - **멱등성**: 동일한 `collection_trigger`와 `collection_window`로 반복 수집하면 결정적인 결과를 생성합니다.
 - **타임아웃**: 소스 읽기가 구성된 타임아웃을 초과하면, 수집기는 타임아웃 진단을 반환하고 raw 상태 레코드는 반환하지 않습니다.
 
+### 3.5 설정 기반(config-driven) 상태 매핑 (공통 수집기 내부 구조)
+
+수집기가 내부적으로 `raw_state_records`(Section 3.3)를 구성하는 방식 또한 각 소스 카테고리나 모듈이 재구현하는 것이 아니라 그 자체로 공통 인프라입니다:
+
+- **`IStateFieldBindingProvider`** — 공유 인터페이스 (`field_names()` / `read_field(name)` / `subscribe(on_update)`). 각 소스는 이 인터페이스에 대해 단 하나의 얇은 어댑터(예: S-CORE Lifecycle 모듈용 `LifecycleFieldBindings`)만 구현하며, 이는 해당 소스의 네이티브 읽기 호출(API, 파일, 명령, OS 인터페이스)을 감쌉니다. 이 어댑터가 매핑 경로에서 **유일한** 소스별 코드입니다. `read_field()`는 동기/풀 기반 소스를 다루며, `subscribe()`는 이벤트 기반/푸시 소스(예: Lifecycle의 `ext_monitor_notify` 콜백)를 다룹니다 — 어댑터가 `subscribe()`로 등록하고 최신 값을 내부에 캐시하면, 이후 `read_field()` 호출이 그 값을 반환합니다. **푸시 기반 어댑터의 일관성 규약:** 각 푸시 이벤트마다 어댑터는 전체 이벤트 페이로드로부터 하나의 불변 스냅샷을 생성하고 이를 원자적으로 교체합니다(예: `std::atomic<std::shared_ptr<const T>>`). 필드 단위 가변 상태를 갱신하는 방식은 사용하지 않습니다. `ConfigDrivenStateMapper`는 각 수집 주기 시작 시 스냅샷을 한 번만 로드하므로, 하나의 raw 레코드 내에서 푸시 기반 필드에 대한 모든 `read_field()` 호출은 동일한 이벤트 세대를 참조합니다 — 수집 주기 도중 새로운 푸시 이벤트가 도착하더라도 마찬가지입니다. 이를 통해 서로 다른 두 이벤트의 필드가 섞인 불일치(torn) 레코드를 방지합니다. **풀 전용(pull-only) 어댑터:** `subscribe()`는 소스 범주와 무관하게 모든 어댑터의 인터페이스 시그니처에 포함되어 있으므로, Evidence Runtime과 `ConfigDrivenStateMapper`는 소스별 조건 분기 없이 이를 균일하게 호출할 수 있습니다. 이벤트 기반/푸시 API가 없는 순수 풀 기반 소스의 어댑터는 `subscribe()`를 no-op으로 구현합니다 — `on_update` 콜백을 받아 저장하거나(또는 단순히 반환하고) 실제로 호출하지는 않습니다. 해당 어댑터가 노출하는 모든 필드는 `read_field()`만으로 충분히 제공되기 때문입니다. 이는 오류나 누락된 기능이 아니라, 풀 전용 소스에 대한 예상되고 유효한 구현입니다.
+- **`ConfigDrivenStateMapper`** — 한 번만 구축되어 소스 카테고리와 무관하게 모든 수집기가 공유합니다. 소스의 `RawEvidenceSchema` 구성과 `IStateFieldBindingProvider`가 주어지면, 구성된 필드(name/path/type/required)를 순회하며 바인딩에서 각 값을 가져와 schema에 부합하는 `raw_state_records`를 일반적으로 구성합니다. 소스별 로직을 포함하지 않습니다.
+
+이는 FR-VEL-012 (플랫폼 수집기 분리)와 FR-VEL-013 (입력 인터페이스 구성)을 schema 수준뿐만 아니라 수집기 구현 수준에서도 직접 충족합니다: 새로운 소스를 추가하려면 새로운 `RawEvidenceSchema`, 새로운 `EvidenceNormalizationRule`, 수집기 구성, 그리고 하나의 얇은 바인딩 어댑터만 필요합니다 — 새로운 Mapper, Validator, Normalizer 클래스는 절대 필요하지 않습니다.
+
+![공통 수집기 및 설정 기반 상태 매핑 클래스 다이어그램](../../../features/assets/Collector_common_class_diagram.svg)
+
+[PlantUML 소스](../../../features/diagrams/Collector_common_class_diagram.puml)
+
 ## 4. 수집기 라이프사이클
 
 ### 4.1 라이프사이클 상태
 
 모든 수집기는 Evidence Runtime 내에서 동일한 라이프사이클 상태 머신을 따릅니다:
 
-![수집기 라이프사이클 상태 머신](../../features/assets/Collector_lifecycle_state_machine.svg)
+![수집기 라이프사이클 상태 머신](../../../features/assets/Collector_lifecycle_state_machine.svg)
 
-[PlantUML 원본](../../features/diagrams/Collector_lifecycle_state_machine.puml)
+[PlantUML 원본](../../../features/diagrams/Collector_lifecycle_state_machine.puml)
 
 | 상태 | 설명 |
 |-------|-------------|
@@ -140,6 +153,8 @@ adapter_diagnostic:
   evidence_record_id: null        # 영향받은 evidence에 대한 선택적 링크
 ```
 
+> **입력 계약의 `AdapterDiagnostic`과의 관계:** 이는 [검증 실패 처리 계약](../configuration-contracts/input-interface-contract/validation-failure-handling.md)에서 참조하는 것과 동일한 `AdapterDiagnostic` 종류이며, 서로 다른 파이프라인 단계를 다룹니다. 이 문서의 형태는 **수집기 I/O 수준** 실패(`error_category` 값: `CONFIGURATION_ERROR`, `SOURCE_UNAVAILABLE`, `AUTHENTICATION_ERROR`, `TIMEOUT`, `SCHEMA_VIOLATION`, `NORMALIZATION_ERROR`, `RESOURCE_EXHAUSTION`, `INTERNAL_ERROR` — Section 5.1)를 다루며, 이는 raw 상태 레코드가 검증될 수 있기 **이전에** 발생할 수 있으므로(예: 소스 API에 접근 불가), `sourceMessageId`/`field` 같은 필드는 적용되지 않습니다. 입력 계약의 형태는 레코드가 읽힌 후 **스키마 검증 수준** 실패(`failureCategory` 값: `missingRequiredField`, `invalidType`, `outOfRange`, `notAllowedValue`, `patternMismatch`, `additionalFieldPresent`)를 다룹니다. 수집기 수준 진단에 `error_category: SCHEMA_VIOLATION`이 있으면, 입력 계약의 `AdapterDiagnostic`에서 더 세분화된 `failureCategory`(및 문제 `field`)가 동일한 진단 레코드에 포함되어 어떤 검증 규칙이 실패했는지 식별합니다. 두 문서는 하나의 `AdapterDiagnostic` 종류의 상호 보완적 측면을 설명하며, 서로 다른 두 스키마가 아닙니다.
+
 ### 5.3 실패 처리 통합
 
 - **일시적 오류** (예: `SOURCE_UNAVAILABLE`, `TIMEOUT`): 수집기는 지수 백오프로 재시도(최대 3회).
@@ -156,28 +171,42 @@ adapter_diagnostic:
 - Evidence Runtime은 수집기 구성 YAML을 통해 속도 제한을 구성할 수 있음.
 
 ## 6. 공통 수집기 구성
-
-모든 수집기는 이 공통 구성 구조를 공유합니다 (`transport`/`api` 바인딩과 같은 소스별 필드는 각 소스 카테고리의 자체 설계 문서에서 정의됨):
-
+ 
+모든 수집기는 `VehicleEvidenceCollector` 리소스 스키마를 준수하는 이 공통 구성 구조를 공유합니다 (`transport`/`api` 바인딩과 같은 소스별 필드는 각 소스 카테고리의 자체 설계 문서에서 정의됨):
+ 
 ```yaml
-collector:
-  kind: VehicleEvidenceCollector
+apiVersion: score.dev/v1alpha1
+kind: VehicleEvidenceCollector
+metadata:
+  name: <source>-collector
   version: 1.0.0
-  collector_id: "<source>-collector"
+spec:
   source:
     transport: <s-core-api | dds | file | command | os-interface>
     api: "<source-specific-api-or-topic>"
-  collection:
-    trigger: periodic
-    interval_seconds: 60
-    timeout_seconds: 10
-    retry:
-      max_retries: 3
-      backoff_seconds: 2
-  diagnostics:
-    rate_limit_per_minute: 10
-  lifecycle:
-    auto_start: true
+    messageType: <MessageType>
+  inputSchemaRef:
+    name: <input-schema-name>
+    version: 1.0.0
+    path: schemas/<input-schema>.yaml
+  normalizationRuleRef:
+    name: <mapping-rule-name>
+    version: 1.0.0
+    path: mappings/<normalization-mapping>.yaml
+  outputSchemaRef:
+    name: score-normalized-evidence
+    version: 1.0.0
+    path: ../vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml
+  publication:
+    transport: dds
+    topic: ScoreNormalizedEvidence
+    deliveryClass: reliable
+  velHealth:
+    topic: ScoreEvidenceLayerHealth
+    heartbeatPeriod: 1s
+  resourceLimits:
+    inputQueueDepth: 256
+    maximumMessageRate: 1000
 ```
 
 ## 7. 소스 카테고리 설계 문서와의 관계
@@ -187,6 +216,7 @@ collector:
 | 수집기 I/O API | **이 문서** (공통, 모든 소스 카테고리) |
 | 수집기 라이프사이클 | **이 문서** (공통, 모든 소스 카테고리) |
 | 오류 및 진단 보고 | **이 문서** (공통, 모든 소스 카테고리) |
+| 설정 기반 상태 매핑 (`IStateFieldBindingProvider`, `ConfigDrivenStateMapper`) | **이 문서, Section 3.5** (공통, 모든 소스 카테고리) |
 | S-CORE 모듈 수집기 관례 | [s-core-state-collection/s-core-collector-common-design.md](s-core-state-collection/s-core-collector-common-design.md) |
 | S-CORE 모듈 API 표면 / 상태 필드 / 전송 경로 | [s-core-state-collection/collectors/lifecycle-collector-design.md](s-core-state-collection/collectors/lifecycle-collector-design.md) (모듈별) |
 | 런타임 및 하드웨어 수집기 관례 | 아직 작성되지 않음 |

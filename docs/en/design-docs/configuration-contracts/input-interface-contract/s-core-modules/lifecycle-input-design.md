@@ -8,20 +8,21 @@
 
 | Observable | S-CORE Source |
 | --- | --- |
-| Component state (idle/starting/running/terminating/terminated/failed) | `ProcessState` enum (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`) |
-| Run target (string name, e.g. "Startup", "Off", "Fallback") | `RunTargetConfig.name` (arbitrary string, not a fixed enum) |
-| Process group / dependency graph state | `GraphState` enum |
+| Component state (idle/starting/running/terminating/terminated/failed) | `ProcessState` enum (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`); delivered via the external monitor notification capability |
+| Run target (string name, e.g. "Startup", "Off", "Fallback") | `RunTargetConfig.name` (arbitrary string, not a fixed enum); read synchronously via `ILmControl::get_active_run_target()` |
+| Process group / dependency graph state | `GraphState` enum; delivered via the external monitor notification capability |
 | Process group identity | `IdentifierHash` (string-backed; see Section 2 note) |
 | Process exit code | Launch Manager external monitor notification |
-| Process PID | `ProcessInfoNode::getPid()` |
+| Process PID | Launch Manager external monitor notification |
 | Health Monitor supervision status | Deadline / logic / heartbeat monitor status, aggregated (VEL-derived) |
 | Recovery state | `recovery_state_` — hardcoded `IdentifierHash("fallback")` (fallback run target name) |
 
-**S-CORE API used by the VEL collector:** `ProcessInfoNode::getPid()` / `getState()` / `Graph::getState()` for polled state, and the Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`) for event-driven fields (exit_code, process_execution_error, process_group_id, recovery_state, supervision fields).
+**S-CORE API used by the VEL collector:** `ILmControl::get_active_run_target()` for `run_target` (the only synchronous/pull field), and the Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`) for every other field (state, pid, graph_state, exit_code, process_execution_error, process_group_id, recovery_state, supervision fields).
 
-> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. `pid` is exposed via `ProcessInfoNode::getPid()`. `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, and all Health Monitor supervision fields are exposed through `comp_req__launch_man__ext_monitor_notify`. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
+> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. `run_target` is exposed via `ILmControl::get_active_run_target()`. `state`, `pid`, `graph_state`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, and all Health Monitor supervision fields are exposed through `comp_req__launch_man__ext_monitor_notify`. `ProcessInfoNode` and `Graph` are Launch Manager daemon-internal classes, not reachable from an external VEL process. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
 
 ## 2. Source-Specific Notes
+
 
 - **`process_group_id` is `string`, not `uint32`.** It is an `IdentifierHash` (`lifecycle/score/launch_manager/src/daemon/src/common/identifier_hash.hpp`), which wraps a string-derived identifier, not a numeric handle.
 - **`previous_state` is `enum`, not `string`.** It uses the same `allowedValues` as `state` (both are `ProcessState`).

@@ -1,7 +1,7 @@
 # 입력 스키마 구조 및 필수 필드
 
 > **관련:** FR-VEL-013 (입력 인터페이스 구성), STKH-VEL-013
-> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) — Vendor A NPU 런타임 상태의 표준 입력 인터페이스 정의.
+> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) — Vendor A NPU 런타임 상태의 표준 입력 인터페이스 정의.
 
 ## 1. 목적
 
@@ -137,4 +137,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-013, STKH-VEL-013 |
-| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

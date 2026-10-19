@@ -1,7 +1,7 @@
 # Unmapped and Unknown Value Handling
 
 > **Related:** FR-VEL-005 (Source Normalization), FR-VEL-009 (Evidence Quality Metadata), STKH-VEL-005, STKH-VEL-009
-> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. Purpose
 
@@ -140,4 +140,4 @@ failureHandling:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-005, FR-VEL-009, STKH-VEL-005, STKH-VEL-009 |
-| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

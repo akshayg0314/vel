@@ -8,20 +8,21 @@
 
 | 관찰 가능 항목 | S-CORE 소스 |
 | --- | --- |
-| 컴포넌트 상태 (idle/starting/running/terminating/terminated/failed) | `ProcessState` 열거형 (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`) |
-| 실행 대상 (문자열 이름, 예: "Startup", "Off", "Fallback") | `RunTargetConfig.name` (임의 문자열, 고정 열거형 아님) |
-| 프로세스 그룹 / 종속성 그래프 상태 | `GraphState` 열거형 |
+| 컴포넌트 상태 (idle/starting/running/terminating/terminated/failed) | `ProcessState` 열거형 (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`); 외부 모니터 알림 기능을 통해 전달됨 |
+| 실행 대상 (문자열 이름, 예: "Startup", "Off", "Fallback") | `RunTargetConfig.name` (임의 문자열, 고정 열거형 아님); `ILmControl::get_active_run_target()`을 통해 동기적으로 읽힘 |
+| 프로세스 그룹 / 종속성 그래프 상태 | `GraphState` 열거형; 외부 모니터 알림 기능을 통해 전달됨 |
 | 프로세스 그룹 식별자 | `IdentifierHash` (문자열 기반; 섹션 2 참고) |
 | 프로세스 종료 코드 | Launch Manager 외부 모니터 알림 |
-| 프로세스 PID | `ProcessInfoNode::getPid()` |
+| 프로세스 PID | Launch Manager 외부 모니터 알림 |
 | Health Monitor 감독 상태 | 데드라인 / 로직 / 하트비트 모니터 상태, 집계됨 (VEL 파생) |
 | 복구 상태 | `recovery_state_` — 하드코딩된 `IdentifierHash("fallback")` (폴백 실행 대상 이름) |
 
-**VEL 수집기가 사용하는 S-CORE API:** 폴링 상태용 `ProcessInfoNode::getPid()` / `getState()` / `Graph::getState()`, 이벤트 기반 필드 (exit_code, process_execution_error, process_group_id, recovery_state, 감독 필드)용 Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
+**VEL 수집기가 사용하는 S-CORE API:** `ILmControl::get_active_run_target()` (유일한 동기식/풀 필드인 `run_target`용), 그 외 모든 필드 (state, pid, graph_state, exit_code, process_execution_error, process_group_id, recovery_state, 감독 필드)용 Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
 
-> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `pid`는 `ProcessInfoNode::getPid()`를 통해 노출됩니다. `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state` 및 모든 Health Monitor 감독 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
+> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `run_target`은 `ILmControl::get_active_run_target()`을 통해 노출됩니다. `state`, `pid`, `graph_state`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state` 및 모든 Health Monitor 감독 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. `ProcessInfoNode`와 `Graph`는 외부 VEL 프로세스에서 접근할 수 없는 Launch Manager 데몬 내부 클래스입니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
 
 ## 2. 소스별 참고 사항
+
 
 - **`process_group_id`는 `string`이며 `uint32`가 아닙니다.** `IdentifierHash` (`lifecycle/score/launch_manager/src/daemon/src/common/identifier_hash.hpp`)로, 숫자 핸들이 아닌 문자열 파생 식별자를 래핑합니다.
 - **`previous_state`는 `enum`이며 `string`이 아닙니다.** `state`와 동일한 `allowedValues`를 사용합니다 (둘 다 `ProcessState`).

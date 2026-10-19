@@ -18,7 +18,7 @@ tests:
         graph_state: in-transition
         exit_code: 0
         pid: 2048
-        run_target: production
+        run_target: Running
         supervision_status: ok
         alive_indication_count: 42
     expect:
@@ -28,7 +28,7 @@ tests:
         - {evidenceType: s-core.lifecycle.process-group.state, state: in-transition}
         - {evidenceType: s-core.lifecycle.process.exit_code, value: 0, unit: exit-code}
         - {evidenceType: s-core.lifecycle.process.pid, value: 2048, unit: pid}
-        - {evidenceType: s-core.lifecycle.run_target, state: production}
+        - {evidenceType: s-core.lifecycle.run_target, state: Running}
         - {evidenceType: s-core.lifecycle.health.supervision_status, state: ok}
         - {evidenceType: s-core.lifecycle.health.alive_indication_count, value: 42, unit: indications}
   - name: health-supervision-failure-records
@@ -78,7 +78,7 @@ tests:
       source_id: score-lifecycle
       workload_id: launch-manager
       execution_id: exec-9003
-      resource_id: run-target:production
+      resource_id: run-target:Running
       timestamp_ns: 1984217734000
       state: starting
     expect:
@@ -103,4 +103,4 @@ tests:
       timestamp_ns: 1984217735000
     expect:
       rejected: true
-      adapterDiagnostic: MANDATORY_FIELD_MISSING
+      adapterDiagnostic: missingRequiredField

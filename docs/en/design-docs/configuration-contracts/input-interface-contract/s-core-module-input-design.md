@@ -100,11 +100,13 @@ The clock domain is declared **per-source** in the Input Interface Definition (d
 
 ## 7. Configuration-Driven Source Addition
 
-Adding a new S-CORE module as a VEL source requires only configuration, following the standard pattern:
+Adding a new S-CORE module as a VEL source requires only configuration plus one thin adapter class, following the standard pattern:
 
 1. Define the **Input Interface Definition** (`RawEvidenceSchema`) for the module's state.
 2. Define the **Normalization Mapping** (`EvidenceNormalizationRule`) for the module's state.
-3. Implement a **platform-specific collector** that reads the module's state via its S-CORE API (see [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md)).
+3. Implement a thin **`<Module>FieldBindings`** adapter implementing the shared `IStateFieldBindingProvider` interface, which reads the module's state via its S-CORE API (see [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md) for the Lifecycle realization).
+
+No new Mapper, Validator, or Normalizer class is written per module -- `ConfigDrivenStateMapper`, the Schema Validator, and the Normalization Processor are shared, config-driven infrastructure built once (see [Collector_common_class_diagram.puml](../../../../features/diagrams/Collector_common_class_diagram.puml)) and reused unchanged by every S-CORE module collector.
 
 ![Configuration-driven source addition](../../../../features/assets/Configuration_driven_source_addition.svg)
 

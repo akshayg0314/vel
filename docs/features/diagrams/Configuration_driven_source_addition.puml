@@ -17,11 +17,16 @@ start
 (RawEvidenceSchema) for the module's state;
 :Define Normalization Mapping
 (EvidenceNormalizationRule) for the module's state;
-#FFF1E9:Implement a platform-specific collector
+#FFF1E9:Implement a thin <Module>FieldBindings adapter
+(implements shared IStateFieldBindingProvider)
 that reads the module's state via its S-CORE API;
 stop
 
 note right
+No new Mapper, Validator, or Normalizer class is written.
+ConfigDrivenStateMapper, SchemaValidator, and
+NormalizationProcessor are shared, config-driven
+infrastructure (see Collector_common_class_diagram.puml).
 No changes to common VEL processing behavior
 are required (FR-VEL-012, FR-VEL-013/014/015).
 end note

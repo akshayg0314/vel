@@ -80,6 +80,7 @@ package "Health Monitor State" {
   }
 
   class HealthMonitorState {
+    +exit_code : int32
     +supervision_status : SupervisionStatus
     +failed_supervision_type : FailedSupervisionType
     +failed_supervision_cycles : uint32

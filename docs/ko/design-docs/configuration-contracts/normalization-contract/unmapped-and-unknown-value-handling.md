@@ -1,7 +1,7 @@
 # 매핑되지 않은 값 및 알 수 없는 값 처리
 
 > **관련:** FR-VEL-005 (소스 정규화), FR-VEL-009 (Evidence 품질 메타데이터), STKH-VEL-005, STKH-VEL-009
-> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. 목적
 
@@ -140,4 +140,4 @@ failureHandling:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-005, FR-VEL-009, STKH-VEL-005, STKH-VEL-009 |
-| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

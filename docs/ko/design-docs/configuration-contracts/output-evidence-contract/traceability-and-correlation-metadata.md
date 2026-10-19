@@ -1,7 +1,7 @@
 # 추적성 및 상관 메타데이터 필드
 
 > **관련:** FR-VEL-006 (소스 식별 메타데이터), FR-VEL-007 (관찰 시간 메타데이터), FR-VEL-008 (상관 메타데이터), STKH-VEL-006, STKH-VEL-007, STKH-VEL-008
-> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. 목적
 
@@ -120,4 +120,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-006, FR-VEL-007, FR-VEL-008, STKH-VEL-006, STKH-VEL-007, STKH-VEL-008 |
-| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

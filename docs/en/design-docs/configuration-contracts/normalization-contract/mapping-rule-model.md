@@ -1,7 +1,7 @@
 # Mapping Rule Model for Units, Enums, and States
 
 > **Related:** FR-VEL-005 (Source Normalization), FR-VEL-015 (Normalization Mapping Configuration), STKH-VEL-005, STKH-VEL-015
-> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. Purpose
 
@@ -21,7 +21,7 @@ The normalization mapping is defined in configuration, not hard-coded. Each sour
 
 The normalization contract uses the `EvidenceNormalizationRule` kind, mirroring the reference example:
 
-- [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+- [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ### 3.3 Mapping rule model structure
 
@@ -129,4 +129,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-005, FR-VEL-015, STKH-VEL-005, STKH-VEL-015 |
-| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

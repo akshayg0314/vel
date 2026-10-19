@@ -1,7 +1,7 @@
 # Mapping Quality Outputs
 
 > **Related:** FR-VEL-009 (Evidence Quality Metadata), STKH-VEL-009
-> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. Purpose
 
@@ -119,4 +119,4 @@ onUnmapped:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-009, STKH-VEL-009 |
-| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

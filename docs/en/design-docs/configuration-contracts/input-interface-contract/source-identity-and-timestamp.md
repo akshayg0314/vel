@@ -1,7 +1,7 @@
 # Source Identity and Timestamp Requirements
 
 > **Related:** FR-VEL-006 (Source Identity Metadata), FR-VEL-007 (Observation Time Metadata), FR-VEL-008 (Correlation Metadata), STKH-VEL-006, STKH-VEL-007, STKH-VEL-008
-> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
+> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
 
 ## 1. Purpose
 
@@ -97,4 +97,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-006, FR-VEL-007, FR-VEL-008, STKH-VEL-006, STKH-VEL-007, STKH-VEL-008 |
-| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

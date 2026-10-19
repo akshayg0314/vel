@@ -100,11 +100,13 @@ S-CORE 모듈 상태는 표준 정규화 매핑을 사용하여 Vehicle Evidence
 
 ## 7. 구성 기반 소스 추가
 
-새 S-CORE 모듈을 VEL 소스로 추가하려면 표준 패턴에 따라 구성만 필요합니다:
+새 S-CORE 모듈을 VEL 소스로 추가하려면 표준 패턴에 따라 구성과 하나의 얇은 어댑터 클래스만 필요합니다:
 
 1. 모듈 상태에 대한 **입력 인터페이스 정의** (`RawEvidenceSchema`)를 정의합니다.
 2. 모듈 상태에 대한 **정규화 매핑** (`EvidenceNormalizationRule`)을 정의합니다.
-3. S-CORE API를 통해 모듈 상태를 읽는 **플랫폼별 수집기**를 구현합니다 (참조: [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md)).
+3. 공유 `IStateFieldBindingProvider` 인터페이스를 구현하는 얇은 **`<Module>FieldBindings`** 어댑터를 구현하며, 이는 S-CORE API를 통해 모듈 상태를 읽습니다 (Lifecycle 구현 사례는 참조: [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md)).
+
+모듈별로 새로운 Mapper, Validator, Normalizer 클래스는 작성되지 않습니다 — `ConfigDrivenStateMapper`, Schema Validator, Normalization Processor는 한 번만 구축되는 공유 설정 기반 인프라이며 (참조: [Collector_common_class_diagram.puml](../../../../features/diagrams/Collector_common_class_diagram.puml)), 모든 S-CORE 모듈 수집기가 변경 없이 재사용합니다.
 
 ![구성 기반 소스 추가](../../../../features/assets/Configuration_driven_source_addition.svg)
 

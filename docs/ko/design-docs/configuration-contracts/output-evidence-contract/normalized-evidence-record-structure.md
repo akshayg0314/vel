@@ -1,7 +1,7 @@
 # 정규화된 Evidence 레코드 구조
 
 > **관련:** FR-VEL-004 (Vehicle Evidence), FR-VEL-011 (Evidence 게시), FR-VEL-014 (출력 Evidence 구성), STKH-VEL-001, STKH-VEL-011, STKH-VEL-014
-> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. 목적
 
@@ -17,7 +17,7 @@ VEL 아키텍처에서 출력 evidence 계약은 구성 기반입니다. 모든 
 
 출력 evidence 계약은 참조 예시를 반영하여 `NormalizedEvidenceSchema` 종류를 사용합니다:
 
-- [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+- [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ### 3.2 레코드 구조
 
@@ -34,7 +34,7 @@ VEL 아키텍처에서 출력 evidence 계약은 구성 기반입니다. 모든 
 
 ### 3.3 섹션 세부 사항
 
-- **header** — evidence 레코드를 고유하게 식별하는 `evidenceId`(UUID v4)를 포함합니다. UUID (v4)로 생성되며 전역적으로 고유하고 조정이 필요 없으며 분산 수집기를 지원합니다.
+- **header** — evidence 레코드를 고유하게 식별하는 `evidenceId`(UUID v4), 정규화된 evidence 스키마 버전인 `schemaVersion`, 관측값의 점 구분 유형 식별자인 `evidenceType`, 도메인 식별자인 `evidenceDomain`(예: `s-core`, `accelerator`)을 포함합니다.
 - **identity** — `sourceId`, `workloadId`, `executionInstanceId`, `resourceId`, `correlationId`를 포함합니다.
 - **observation** — 값 기반, 상태 기반 또는 둘 다일 수 있습니다. 레코드가 의미 있는 evidence가 되려면 **최소 하나의 observation 필드가 채워져야 합니다**.
 - **time** — `eventTimestampNs` 및 `clockDomain`을 포함합니다.
@@ -61,11 +61,19 @@ spec:
   requiredSections: [header, identity, observation, time, quality, traceability]
   fields:
     - {path: $.header.evidenceId, type: string, required: true}
+    - {path: $.header.schemaVersion, type: string, required: true}
+    - {path: $.header.evidenceType, type: string, required: true}
+    - {path: $.header.evidenceDomain, type: string, required: true}
     - {path: $.identity.sourceId, type: string, required: true}
     - {path: $.identity.workloadId, type: string, required: true}
     - {path: $.identity.executionInstanceId, type: string, required: true}
     - {path: $.identity.resourceId, type: string, required: true}
     - {path: $.identity.correlationId, type: string, required: true}
+    - {path: $.observation.value, type: number, required: false}
+    - {path: $.observation.unit, type: string, required: false}
+    - {path: $.observation.state, type: string, required: false}
+    - {path: $.observation.normalizedClass, type: string, required: false}
+    - {path: $.observation.originalValue, type: string, required: false}
     - {path: $.time.eventTimestampNs, type: uint64, required: true}
     - {path: $.time.clockDomain, type: string, required: true}
     - {path: $.quality.validity, type: enum, values: [valid, invalid, unknown], required: true}
@@ -82,7 +90,10 @@ spec:
 ```json
 {
   "header": {
-    "evidenceId": "550e8400-e29b-41d4-a716-446655440000"
+    "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+    "schemaVersion": "1.0.0",
+    "evidenceType": "workload.execution.latency",
+    "evidenceDomain": "accelerator"
   },
   "identity": {
     "sourceId": "vendor-a-npu",
@@ -117,7 +128,9 @@ spec:
 
 - 모든 정규화된 Vehicle Evidence 레코드는 출력 Evidence 정의를 준수해야 합니다.
 - `requiredSections` 목록은 필수 최상위 섹션을 정의합니다. 배포는 여섯 개의 표준 섹션 (`header`, `identity`, `observation`, `time`, `quality`, `traceability`)을 넘어 배포별 섹션을 추가해서는 안 됩니다.
-- `header.evidenceId`는 evidence 레코드를 고유하게 식별합니다. **UUID (v4)** 로 생성되며 전역적으로 고유하고 조정이 필요 없으며 분산 수집기를 지원합니다.
+- `header.evidenceId`는 evidence 레코드를 고유하게 식별합니다. **UUID (v4)** 로 Normalization Processor가 런타임에 생성하며 전역적으로 고유하고 조정이 필요 없으며 분산 수집기를 지원합니다. 소스 필드에서 파생되지 않으며 `EvidenceNormalizationRule` 매핑에 선언되지 않습니다.
+- `header.schemaVersion`은 레코드가 준수하는 `NormalizedEvidenceSchema`(출력 스키마)의 `metadata.version`에서 Normalization Processor가 채웁니다. 출력 계약 속성이며 소스 파생 값이 아니므로 `EvidenceNormalizationRule` 매핑에 선언되지 않습니다.
+- `header.evidenceType`(각 evidence 매핑에서 설정) 및 `header.evidenceDomain`(`defaults.evidenceDomain`으로 설정)과 함께 `header` 섹션은 Normalization Processor에 의해 완전히 채워집니다: `evidenceType` 및 `evidenceDomain`은 매핑 구성에서 오고 `evidenceId` 및 `schemaVersion`은 프로세서에서 생성됩니다.
 - `observation` 섹션은 값 기반, 상태 기반 또는 둘 다일 수 있습니다. 레코드가 의미 있는 evidence가 되려면 **최소 하나의 observation 필드가 채워져야 합니다**.
 - 집계 데이터 형식은 `json`입니다.
 
@@ -126,4 +139,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-004, FR-VEL-011, FR-VEL-014, STKH-VEL-001, STKH-VEL-011, STKH-VEL-014 |
-| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

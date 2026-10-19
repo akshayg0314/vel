@@ -1,7 +1,7 @@
 # Input Schema Structure and Required Fields
 
 > **Related:** FR-VEL-013 (Input Interface Configuration), STKH-VEL-013
-> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
+> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
 
 ## 1. Purpose
 
@@ -137,4 +137,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-013, STKH-VEL-013 |
-| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

@@ -23,7 +23,7 @@ package "VEL Evidence Ingestion (S-CORE State Collection)" {
       +collection_trigger : CollectionTrigger
       +collection_window : object
       +parameters : object
-      +collect() : raw_state_records
+      +collect() : Result<vector<RawStateRecord>, CollectorError>
       +get_metadata() : collection_metadata
       +get_diagnostics() : diagnostics
       +health_probe() : health_status
@@ -64,28 +64,16 @@ package "VEL Evidence Ingestion (S-CORE State Collection)" {
     end note
   }
 
-  package "Supporting Classes" {
-    class LifecycleStateReader {
-      -transport : s-core-api = lifecycle-state-api
-      +read_graph_state() : GraphState
-      +read_process_state() : ProcessState
-      +read_run_target() : string
-      +read_pid() : uint32
-      +read_exit_code() : int32
-      +read_process_exec_error() : uint32
-      +read_process_group_id() : string
-      +read_recovery_state() : string
-      +read_supervision_status() : SupervisionStatus
-      +read_failed_supervision_type() : FailedSupervisionType
-      +read_per_type_error() : DeadlineError | HeartbeatError | LogicError
-      +read_failed_supervision_cycles() : uint32
-      +read_deadline_violation() : bool
-      +read_alive_indication_count() : uint32
+  package "Shared Engine" {
+    interface IStateFieldBindingProvider {
+      +field_names() : list<string>
+      +read_field(field_name : string) : any
+      +subscribe(on_update : callback) : bool
     }
 
-    class LifecycleStateMapper {
-      +map_to_raw_record() : ScoreLifecycleState
-      +map_field(path : string) : any
+    class ConfigDrivenStateMapper {
+      -schema_ref : RawEvidenceSchema
+      +map_to_raw_record(bindings : IStateFieldBindingProvider) : object
       +validate_required_fields() : bool
     }
 
@@ -99,27 +87,64 @@ package "VEL Evidence Ingestion (S-CORE State Collection)" {
       +emit() : AdapterDiagnostic
     }
 
-    LifecycleCollector ..> LifecycleStateReader : uses
-    LifecycleCollector ..> LifecycleStateMapper : uses
+    LifecycleCollector ..> IStateFieldBindingProvider : uses (as LifecycleFieldBindings)
+    LifecycleCollector ..> ConfigDrivenStateMapper : uses
     LifecycleCollector ..> CollectorDiagnostics : reports via
-    LifecycleStateMapper ..> LifecycleStateReader : consumes raw state
+    ConfigDrivenStateMapper ..> IStateFieldBindingProvider : reads fields via
 
-    note right of LifecycleStateReader
-      • Wraps S-CORE API: getState(), getPid(), ext_monitor_notify, supervision
-      • Read-only
+    note right of IStateFieldBindingProvider
+      • Generic engine classes shown here in collapsed form;
+        see the dedicated common diagram for full notes on
+        why these are SHARED (not Lifecycle-specific):
+        [Collector_common_class_diagram.puml]
+      • This diagram shows only the Lifecycle-specific
+        REALIZATION: LifecycleFieldBindings implementing
+        this interface (below)
     end note
+  }
 
-    note right of LifecycleStateMapper
-      • Maps S-CORE state to score-lifecycle-state schema (24 fields)
-      • Normalization done downstream
-    end note
+  package "Lifecycle-Specific Adapter (the only new code for this module)" {
+    class LifecycleFieldBindings {
+      -transport : s-core-api = lifecycle-state-api
+      +field_names() : list<string>
+      +read_field(field_name : string) : any
+      +subscribe(on_update : callback) : bool
+    }
 
-    note right of CollectorDiagnostics
-      • error_category: ErrorCategory enum
-        (CONFIGURATION_ERROR ... INTERNAL_ERROR)
-      • severity: Severity enum (INFO ... FATAL)
-      • emit() produces AdapterDiagnostic
-      • See source-collector-interface-design.md Sec 5
+    IStateFieldBindingProvider <|.. LifecycleFieldBindings : implements
+
+    note right of LifecycleFieldBindings
+      • Thin adapter: field_name -> S-CORE API call. It maintains
+        TWO mw::com service connections:
+        (1) ILmControl (pull) for run_target via
+            get_active_run_target()
+        (2) IExtMonitorNotify (push) for all other fields via
+            ext_monitor_notify callback
+      • ProcessInfoNode and Graph (state/pid/graph_state) are
+        INTERNAL Launch Manager daemon classes -- NOT reachable by
+        an external VEL process and NOT part of ILmControl (see
+        note on ProcessInfoNode below)
+      • state, pid, graph_state, exit_code, process_execution_error,
+        supervision_status, failed_supervision_type,
+        failed_supervision_cycles, deadline_error, heartbeat_error,
+        logic_error, deadline_violation, alive_indication_count,
+        process_group_id, recovery_state -- all delivered via the
+        external monitor notification capability
+        (comp_req__launch_man__ext_monitor_notify) as a
+        ProcessMonitorNotify payload, through IExtMonitorNotify
+      • read_field(): pull-based read for run_target only
+      • subscribe(): registers a callback against the external monitor
+        notification capability and returns true once that
+        registration succeeds (false if this source has no
+        event-driven path available); on each callback invocation the
+        adapter builds one immutable snapshot of the full payload
+        (originating from PHM via LM) and atomically swaps it in;
+        read_field() calls within one collection cycle all resolve
+        against that same snapshot, never mixing two event generations
+      • Implements IStateFieldBindingProvider only -- does NOT
+        duplicate ConfigDrivenStateMapper or CollectorDiagnostics
+      • This is the ONLY class a future module needs to write
+        beyond its schema/mapping/collector config
     end note
   }
 
@@ -226,10 +251,34 @@ package "S-CORE Lifecycle (source-side types)" {
     +getControlClientChannel() : ControlClientChannelP
   }
 
-  class HealthMonitorState {
+  note right of ProcessInfoNode
+    • INTERNAL class of the Launch Manager daemon
+      (score::mw::lifecycle::internal, process_group_manager/details/)
+    • NOT part of the public ILmControl interface, NOT exposed via
+      mw::com, and NOT reachable by an external VEL process
+    • Shown here ONLY to document the origin/type of state and pid --
+      VEL does NOT call these getters directly
+  end note
+
+  interface ILmControl {
+    +get_active_run_target() : RunTargetName
+  }
+
+  interface IExtMonitorNotify {
+    +subscribe(on_notify : callback) : Result<void>
+    +latest() : optional<ProcessMonitorNotify>
+  }
+
+  class ProcessMonitorNotify {
+    +process_name : string
+    +process_group_name : string
+    +process_state : ProcessState
+    +pid : uint32
+    +exit_code : int32
     +supervision_status : SupervisionStatus
     +failed_supervision_type : FailedSupervisionType
     +deadline_error : DeadlineError
+    +deadline_error_us : int64
     +heartbeat_error : HeartbeatError
     +logic_error : LogicError
     +failed_supervision_cycles : uint32
@@ -240,27 +289,50 @@ package "S-CORE Lifecycle (source-side types)" {
     +recovery_state : string
   }
 
+  note right of ProcessMonitorNotify
+    • Payload type delivered by the external monitor notification
+      capability (score::mw::lifecycle::ProcessMonitorNotify)
+    • process_name/process_group_name identify WHICH process a given
+      notification is about: the callback is registered ONCE per
+      LifecycleFieldBindings instance (not once per process), so each
+      notification must self-identify its subject for the adapter to
+      route it to the correct resource_id
+    • Originates from Platform Health Monitor (PHM) for the fields PHM
+      evaluates; delivered to LifecycleFieldBindings via Launch
+      Manager's external monitor notification capability
+    • Delivered via the IExtMonitorNotify mw::com event service
+  end note
+
   ProcessInfoNode --> ProcessState : getState()
-  HealthMonitorState --> SupervisionStatus : supervision_status
-  HealthMonitorState --> FailedSupervisionType : failed_supervision_type
-  HealthMonitorState --> DeadlineError : deadline_error
-  HealthMonitorState --> HeartbeatError : heartbeat_error
-  HealthMonitorState --> LogicError : logic_error
+  ProcessMonitorNotify --> SupervisionStatus : supervision_status
+  ProcessMonitorNotify --> FailedSupervisionType : failed_supervision_type
+  ProcessMonitorNotify --> DeadlineError : deadline_error
+  ProcessMonitorNotify --> HeartbeatError : heartbeat_error
+  ProcessMonitorNotify --> LogicError : logic_error
 }
 
-LifecycleStateReader ..> ProcessState : reads
-LifecycleStateReader ..> GraphState : reads
-LifecycleStateReader ..> ProcessInfoNode : reads via getState()/getPid()
-LifecycleStateReader ..> HealthMonitorState : reads supervision
+LifecycleFieldBindings ..> ProcessState : reads (type only, via notification)
+LifecycleFieldBindings ..> GraphState : reads (type only, via notification)
+LifecycleFieldBindings ..> ProcessMonitorNotify : reads via notification
+LifecycleFieldBindings ..> ILmControl : pull (run_target via get_active_run_target)
+LifecycleFieldBindings ..> IExtMonitorNotify : push (subscribe for ProcessMonitorNotify)
 
-
-note bottom of LifecycleStateReader
-  • pid via ProcessInfoNode::getPid()
-  • exit_code/process_exec_error NOT exposed via ProcessInfoNode getters;
-    process_group_id/recovery_state/supervision fields exposed on
-    HealthMonitorState (also not via ProcessInfoNode getters) -- all via
-    ext_monitor_notify callback only
-  • See lifecycle-collector-design.md Sec 2.4
+note bottom of LifecycleFieldBindings
+  • Pull field (synchronous, stable, public API): ONLY
+    run_target, via ILmControl::get_active_run_target()
+  • state, pid, graph_state are NOT accessible via any public getter --
+    ProcessInfoNode::getState()/getPid() and Graph's state accessor are
+    INTERNAL Launch Manager daemon classes, not reachable cross-process
+    and not exposed through ILmControl
+  • All push fields (state, pid, graph_state, exit_code,
+    process_execution_error, supervision_status,
+    failed_supervision_type, deadline_error, heartbeat_error,
+    logic_error, deadline_violation, failed_supervision_cycles,
+    alive_indication_count, process_group_id, recovery_state) are
+    delivered via the IExtMonitorNotify mw::com event service as a
+    ProcessMonitorNotify payload
+  • See lifecycle-collector-design.md Sec 2.4 and Sec 6 for the full
+    accessibility boundary
 end note
 
 @enduml

@@ -1,7 +1,7 @@
 # 단위, Enum 및 상태 매핑 규칙 모델
 
 > **관련:** FR-VEL-005 (소스 정규화), FR-VEL-015 (정규화 매핑 구성), STKH-VEL-005, STKH-VEL-015
-> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. 목적
 
@@ -21,7 +21,7 @@ VEL 아키텍처에서 정규화 매핑은 구성 기반(configuration-driven)�
 
 정규화 계약은 참조 예시를 반영하여 `EvidenceNormalizationRule` 종류를 사용합니다:
 
-- [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+- [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ### 3.3 매핑 규칙 모델 구조
 
@@ -129,4 +129,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-005, FR-VEL-015, STKH-VEL-005, STKH-VEL-015 |
-| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

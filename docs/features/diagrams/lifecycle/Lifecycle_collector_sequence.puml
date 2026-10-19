@@ -12,36 +12,132 @@ skinparam noteBorderColor #BFC0C0
 
 ' S-CORE source-side participants (blue/teal)
 participant "Launch Manager" as LM #A8D8EA
-participant "Graph /\nProcessInfoNode" as State #A8D8EA
 
 ' VEL Evidence Ingestion participants (green/amber)
 participant "VEL Lifecycle\nCollector" as Collector #C5E1A5
+participant "LifecycleFieldBindings\n(IStateFieldBindingProvider)" as Bindings #C5E1A5
+participant "ConfigDrivenStateMapper\n(shared)" as Mapper #C5E1A5
 participant "Schema Validator" as Validator #C5E1A5
 participant "Normalization\nProcessor" as Normalizer #C5E1A5
 participant "Vehicle Evidence\nPublisher" as Publisher #C5E1A5
 
-Collector -> State : graph.getState()
-State --> Collector : GraphState (kSuccess, kInTransition, ...)
-Collector -> State : process_node.getState()
-State --> Collector : ProcessState (kIdle, kStarting, kRunning, ...)
-Collector -> State : process_node.getPid()
-State --> Collector : pid (osal::ProcessID)
-Collector -> LM : get_run_target()
-LM --> Collector : run_target (string — e.g. "Startup", "Off", "Fallback")
+== Initialization & Event Subscription ==
+Collector -> Bindings : subscribe(on_update)
+note right of Bindings
+  * Collector passes on_update callback to Bindings;
+    Bindings independently registers with LM.
+    Collector is not a party to the LM registration.
+end note
+Bindings -> LM : register ext_monitor_notify callback\n(via IExtMonitorNotify event service)
+LM --> Bindings : registration confirmed
 
-LM -> Collector : ext_monitor_notify callback\n(supervision + exit/error fields)
-note right of Collector
-  * ext_monitor_notify payload:
+== Asynchronous Event Push (on process/monitor state change) ==
+LM -> Bindings : ext_monitor_notify callback\n(ProcessMonitorNotify payload)
+Bindings -> Bindings : build new immutable snapshot\nand atomically swap it in
+note right of Bindings
+  * ProcessMonitorNotify payload delivers:
+  * process identity (process_name, process_group_name)
+  * process state (ProcessState), pid
+  * graph state (GraphState)
   * exit_code, process_execution_error
   * supervision_status, failed_supervision_type
   * failed_supervision_cycles, deadline_error
   * heartbeat_error, logic_error, deadline_violation
   * alive_indication_count, process_group_id
   * recovery_state
+  * Supervision fields originate from Health Monitor (PHM);
+    LM is the callback emitter to LifecycleFieldBindings.
+  * state, pid, graph_state are delivered via this push --
+    VEL does NOT call ProcessInfoNode::getState()/getPid()
+    or Graph::getState() directly; those are Launch Manager
+    daemon-internal classes not reachable cross-process.
+  * LifecycleFieldBindings builds one immutable snapshot
+    struct from the full payload and atomically swaps it in,
+    so subsequent read_field() queries within one collection
+    cycle all observe the same notification generation.
+  * Implements shared IStateFieldBindingProvider
 end note
 
-Collector -> Collector : map fields to raw state record\n(score-lifecycle-state schema)
-Collector -> Collector : produce collection_metadata\n(timestamp, duration, record count)
+== Collection Cycle ==
+Collector -> Mapper : map_to_raw_record(bindings)
+
+group Pull Field Read (synchronous API call)
+  Mapper -> Bindings : read_field("run_target")
+  Bindings -> LM : get_active_run_target()\n(via ILmControl service)
+  LM --> Bindings : run_target string
+  note right of Bindings
+    * run_target is the ONLY pull field from LM, via the
+      synchronous ILmControl::get_active_run_target() API
+      (Startup/Off/Fallback).
+    * All supervision/state/pid fields are push-only via
+      ext_monitor_notify (never polled via
+      get_active_run_target()).
+  end note
+  Bindings --> Mapper : run_target value
+end
+
+group Cached Push Field Reads (from local cache)
+  note over Mapper, Bindings
+    * Bindings takes a single atomic snapshot of all cached
+      push fields (an immutable struct swapped in on each
+      ext_monitor_notify) at the START of this group -- not
+      re-read individually per field.
+    * read_field(field_name) is called once per field
+      (IStateFieldBindingProvider signature:
+      read_field(field_name: string)), but every call within
+      this group resolves against that ONE snapshot.
+    * Guarantees all push-origin fields in a single raw
+      record originate from the same notification generation
+      (no torn/mixed reads even if a new ext_monitor_notify
+      arrives mid-cycle).
+  end note
+  Mapper -> Bindings : read_field("state")
+  Bindings --> Mapper : snapshot.process_state\n(normalized to schema string)
+  note right of Bindings
+    * LifecycleFieldBindings normalizes C++ enum to schema
+      string: kIdle->"idle", kStarting->"starting",
+      kRunning->"running", kTerminating->"terminating",
+      kTerminated->"terminated", kFailed->"failed"
+  end note
+  Mapper -> Bindings : read_field("pid")
+  Bindings --> Mapper : snapshot.pid
+  Mapper -> Bindings : read_field("graph_state")
+  Bindings --> Mapper : snapshot.graph_state
+  Mapper -> Bindings : read_field("exit_code")
+  Bindings --> Mapper : snapshot.exit_code
+  Mapper -> Bindings : read_field("supervision_status")
+  Bindings --> Mapper : snapshot.supervision_status
+  Mapper -> Bindings : read_field("failed_supervision_type")
+  Bindings --> Mapper : snapshot.failed_supervision_type
+  Mapper -> Bindings : read_field("process_execution_error")
+  Bindings --> Mapper : snapshot.process_execution_error
+  note right of Bindings
+    * Remaining push fields (deadline_error, heartbeat_error,
+      logic_error, deadline_violation, failed_supervision_cycles,
+      alive_indication_count, process_group_id, recovery_state)
+      follow the same one-field-per-read_field() call pattern,
+      all resolved against the same snapshot taken above;
+      omitted above for diagram brevity only -- never batched
+      into a single multi-argument call.
+  end note
+end
+
+Mapper -> Mapper : iterate score-lifecycle-state\nRawEvidenceSchema fields,\nbuild raw record generically
+Mapper --> Collector : raw state record\n(score-lifecycle-state schema)
+note right of Mapper
+  * ConfigDrivenStateMapper is SHARED across every
+    S-CORE module collector, not Lifecycle-specific
+  * Driven entirely by the score-lifecycle-state
+    RawEvidenceSchema config -- zero Lifecycle-specific
+    logic in the mapper itself
+end note
+
+Collector -> Collector : produce collection_metadata\n(timestamp, duration, record_count=1 pre-populated)
+note right of Collector
+  * record_count is pre-populated as 1 for this cycle.
+  * Final accepted/rejected count is reflected in health_status
+    updated at the end of the cycle (after validation outcome).
+end note
 Collector -> Validator : raw state record + collection_metadata
 alt schema-valid
   Validator --> Collector : schema-valid
