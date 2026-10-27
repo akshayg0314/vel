@@ -23,6 +23,23 @@ spec:
     transport: s-core-api
     api: lifecycle-state-api
     messageType: ScoreLifecycleState
+  fieldBindingProvider:
+    # kind: plugin -- Lifecycle's native interface (two distinct mw::com
+    # service connections: ILmControl pull + IExtMonitorNotify push) cannot
+    # be expressed by VEL core's generic, declarative binding, so its
+    # IStateFieldBindingProvider realization is an independently built and
+    # deployed plugin, loaded by the shared PluginLoader purely from this
+    # config (see source-collector-interface-design.md Section 3.6). This is
+    # the ONLY place this selection is made -- VEL core has no Lifecycle-
+    # specific collector subclass or hard-coded factory entry.
+    kind: plugin
+    plugin:
+      library: plugins/lifecycle-field-bindings
+      abiVersion: 1
+      entryPoint: vel_plugin_create_binding_provider
+      settings:
+        transport: s-core-api
+        api: lifecycle-state-api
   inputSchemaRef:
     name: score-lifecycle-state
     version: 1.0.0
@@ -46,6 +63,22 @@ spec:
     inputQueueDepth: 256
     maximumMessageRate: 1000
 ```
+
+Field-level binding and conversion for the module's state fields are declared in `schemas/score-lifecycle-state-v1.0.0.yaml` (not duplicated here). For example, `state`'s declaration is:
+
+```yaml
+- name: state
+  path: $.state
+  type: string
+  required: true
+  conversion:
+    operation: enumMap
+    sourceValueKind: enum
+    values: {kIdle: idle, kStarting: starting, kRunning: running, kTerminating: terminating, kTerminated: terminated, kFailed: failed}
+    unmappedValue: unknown
+```
+
+`LifecycleFieldBindings.read_field("state")` returns the raw native label observed from the source (e.g. `"kRunning"`); the shared `ConfigDrivenStateMapper` looks that value up in `conversion.values` and writes `"running"` to the raw record. If a future S-CORE release adds a `ProcessState` member VEL's configuration has not yet been updated for (e.g. a hypothetical `kDegraded`), `unmappedValue: unknown` means the mapper writes the canonical string `"unknown"` as the evidence string, rather than rejecting the record or preserving the raw label verbatim. See [source-collector-interface-design.md Section 3.7](../../source-collector-interface-design.md#37-field-value-conversion-common-collector-internals) for the full mechanism, which is shared by every S-CORE module, not Lifecycle-specific.
 
 ---
 
@@ -93,7 +126,7 @@ The diagram below shows `ProcessState`, `GraphState`, the recovery-action config
 
 [PlantUML source](../../../../../features/diagrams/lifecycle/Lifecycle_type_model.puml)
 
-The class diagram below shows the VEL-side collector implementation classes. `LifecycleCollector` extends the common `SCoreCollector` (S-CORE-specific conventions) which in turn extends the abstract `SourceCollector` (common VEL collector interface). The mapping/validation/diagnostics engine (`ConfigDrivenStateMapper`, `CollectorDiagnostics`) is **shared across every S-CORE module collector**, not Lifecycle-specific; `LifecycleFieldBindings` is the only Lifecycle-specific class, and it exists solely to implement the shared `IStateFieldBindingProvider` interface over the Lifecycle S-CORE API. See Section 7 for how this keeps future modules config-driven.
+The class diagram below shows the VEL-side collector implementation classes. `SCoreCollector` (S-CORE-specific conventions, extending the abstract `SourceCollector`) is instantiated **directly from `lifecycle-collector.yaml`** with `source_ref=score.lifecycle`, `collector_id=lifecycle-collector`. The mapping/validation/diagnostics engine (`ConfigDrivenStateMapper`, `CollectorDiagnostics`) is **shared across every S-CORE module collector**, not Lifecycle-specific. Lifecycle's `IStateFieldBindingProvider` realization (`LifecycleFieldBindings`) is loaded at runtime by the shared `PluginLoader` as an **independently built and deployed plugin** (a binding artifact, selected purely by `lifecycle-collector.yaml`'s `fieldBindingProvider` config) because Lifecycle's native interface -- two distinct `mw::com` service connections -- cannot be expressed by VEL core's generic, declarative binding. `LifecycleFieldBindings` is the only Lifecycle-specific artifact in the whole design, and it is never compiled into VEL core. See Section 7 for how this keeps future modules config-driven, and `source-collector-interface-design.md` Sections 3.5-3.7 for the shared plugin-loading and field-conversion mechanisms this realization relies on.
 
 ![Lifecycle collector class diagram](../../../../../features/assets/lifecycle/Lifecycle_collector_class_diagram.svg)
 
@@ -126,6 +159,15 @@ score::Result<score::mw::lifecycle::RunTargetName> run_target = lm_control->get_
 //    ProcessInfoNode and Graph, which hold this state internally, are Launch Manager
 //    daemon-internal classes.
 //
+//    read_field()/subscribe() return the RAW native value exactly as observed (e.g. the
+//    literal ProcessState enum label "kRunning") -- LifecycleFieldBindings performs NO
+//    enum-to-string conversion itself. That conversion is applied generically by the
+//    shared ConfigDrivenStateMapper, driven by each field's `conversion` block in
+//    score-lifecycle-state-v1.0.0.yaml (see Section 2.2's config example and Section 4),
+//    with unrecognized raw values mapped to the canonical string "unknown" (unmappedValue)
+//    rather than rejected or preserved verbatim. This keeps LifecycleFieldBindings a thin,
+//    source-only plugin.
+//
 //    Consistency guarantee: on each notification, LifecycleFieldBindings builds one
 //    immutable snapshot struct from the full payload and atomically swaps a reference to
 //    it in, rather than updating per-field mutable state. The ConfigDrivenStateMapper takes
@@ -139,7 +181,8 @@ score::Result<score::mw::lifecycle::RunTargetName> run_target = lm_control->get_
 // 3. LifecycleFieldBindings exposes these values through the shared IStateFieldBindingProvider
 //    interface (field_names() / read_field() / subscribe()); the shared ConfigDrivenStateMapper
 //    (not Lifecycle-specific) then builds the raw state record generically by iterating the
-//    score-lifecycle-state RawEvidenceSchema and pulling each field's value from the bindings.
+//    score-lifecycle-state RawEvidenceSchema, pulling each field's value from the bindings, and
+//    applying each field's configured `conversion` rule where declared.
 ```
 
 The sequence below shows the full access-pattern interaction, including the `get_active_run_target()` read path and the external monitor notification callback path for the push-based fields:
@@ -164,32 +207,34 @@ The sequence below shows the full access-pattern interaction, including the `get
 
 The collector produces raw state records conforming to the `score-lifecycle-state` schema (`interfaces/score-evidence-layer-package/schemas/score-lifecycle-state-v1.0.0.yaml`):
 
-| Field | Path | Type | Required |
-|-------|------|------|----------|
-| `message_id` | `$.message_id` | string | ✓ |
-| `source_id` | `$.source_id` | string | ✓ |
-| `workload_id` | `$.workload_id` | string | ✓ |
-| `execution_id` | `$.execution_id` | string | ✓ |
-| `resource_id` | `$.resource_id` | string | ✓ |
-| `timestamp_ns` | `$.timestamp_ns` | uint64 | ✓ |
-| `state` | `$.state` | enum | ✓ |
-| `previous_state` | `$.previous_state` | enum | – |
-| `transition_time_ns` | `$.transition_time_ns` | uint64 | – |
-| `run_target` | `$.details.run_target` | string | – |
-| `exit_code` | `$.details.exit_code` | int32 | – |
-| `pid` | `$.details.pid` | uint32 | – |
-| `graph_state` | `$.details.graph_state` | enum | – |
-| `supervision_status` | `$.details.supervision_status` | enum | – |
-| `failed_supervision_cycles` | `$.details.failed_supervision_cycles` | uint32 | – |
-| `failed_supervision_type` | `$.details.failed_supervision_type` | enum | – |
-| `deadline_error` | `$.details.deadline_error` | enum | – |
-| `heartbeat_error` | `$.details.heartbeat_error` | enum | – |
-| `logic_error` | `$.details.logic_error` | enum | – |
-| `deadline_violation` | `$.details.deadline_violation` | bool | – |
-| `alive_indication_count` | `$.details.alive_indication_count` | uint32 | – |
-| `process_execution_error` | `$.details.process_execution_error` | uint32 | – |
-| `process_group_id` | `$.details.process_group_id` | string | – |
-| `recovery_state` | `$.details.recovery_state` | string | – |
+| Field | Path | Type | Required | Conversion |
+|-------|------|------|----------|------------|
+| `message_id` | `$.message_id` | string | ✓ | – |
+| `source_id` | `$.source_id` | string | ✓ | – |
+| `workload_id` | `$.workload_id` | string | ✓ | – |
+| `execution_id` | `$.execution_id` | string | ✓ | – |
+| `resource_id` | `$.resource_id` | string | ✓ | – |
+| `timestamp_ns` | `$.timestamp_ns` | uint64 | ✓ | – |
+| `state` | `$.state` | string | ✓ | `enumMap`, `unmappedValue: unknown` |
+| `previous_state` | `$.previous_state` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `transition_time_ns` | `$.transition_time_ns` | uint64 | – | – |
+| `run_target` | `$.details.run_target` | string | – | – |
+| `exit_code` | `$.details.exit_code` | int32 | – | – |
+| `pid` | `$.details.pid` | uint32 | – | – |
+| `graph_state` | `$.details.graph_state` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `supervision_status` | `$.details.supervision_status` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `failed_supervision_cycles` | `$.details.failed_supervision_cycles` | uint32 | – | – |
+| `failed_supervision_type` | `$.details.failed_supervision_type` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `deadline_error` | `$.details.deadline_error` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `heartbeat_error` | `$.details.heartbeat_error` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `logic_error` | `$.details.logic_error` | string | – | `enumMap`, `unmappedValue: unknown` |
+| `deadline_violation` | `$.details.deadline_violation` | bool | – | – |
+| `alive_indication_count` | `$.details.alive_indication_count` | uint32 | – | – |
+| `process_execution_error` | `$.details.process_execution_error` | uint32 | – | – |
+| `process_group_id` | `$.details.process_group_id` | string | – | – |
+| `recovery_state` | `$.details.recovery_state` | string | – | – |
+
+> **Why `string`, not `enum`:** these fields carry interface-specific state/error values that originate from the S-CORE Lifecycle module's own enums (`ProcessState`, `GraphState`, `SupervisionStatus`, `FailedSupervisionType`, `DeadlineError`, `HeartbeatError`, `LogicError`). VEL does not own or enumerate these value sets as a closed schema constraint (`allowedValues`) — a future S-CORE release may add a new member to any of them. Instead, each field's `conversion` block (declared once in `schemas/score-lifecycle-state-v1.0.0.yaml`, shown in Section 2.2's configuration example) maps the **currently known** raw native labels to their evidence string form, and `unmappedValue: unknown` guarantees an unrecognized raw value is surfaced as the canonical string `"unknown"` — never rejected, and never preserved verbatim. See [source-collector-interface-design.md Section 3.7](../../source-collector-interface-design.md#37-field-value-conversion-common-collector-internals) for the shared mechanism that executes this.
 
 ---
 
@@ -220,14 +265,17 @@ This satisfies `saf_req__vel__*` (no lifecycle/process/container/hardware contro
 
 ## 7. Extensibility: Adding a New S-CORE Module
 
-The mapping/validation engine shown in Section 2.2 is **shared infrastructure**, not Lifecycle-specific. Adding a new S-CORE module collector (e.g. Persistency, Communication, Logging) requires only:
+The mapping/validation engine shown in Section 2.2 is **shared infrastructure**, not Lifecycle-specific, and adding a new S-CORE module collector does **not** mean adding a new module-specific class to VEL core. It means:
 
-1. A new `RawEvidenceSchema` config (`schemas/score-<module>-state-v1.0.0.yaml`).
+1. A new `RawEvidenceSchema` config (`schemas/score-<module>-state-v1.0.0.yaml`), with a `conversion` block on any interface-specific state/error field (Section 4 and `source-collector-interface-design.md` Section 3.7) -- never a closed `enum`/`allowedValues` for such fields.
 2. A new `EvidenceNormalizationRule` config (`mappings/score-<module>-to-evidence-v1.0.0.yaml`).
-3. A new `VehicleEvidenceCollector` config (`collectors/<module>-collector.yaml`).
-4. A thin `<Module>FieldBindings` class implementing the shared `IStateFieldBindingProvider` interface, wrapping that module's native S-CORE API calls.
+3. A new `VehicleEvidenceCollector` config (`collectors/<module>-collector.yaml`), including a `fieldBindingProvider` block that selects how the module's `IStateFieldBindingProvider` is realized:
+   - **`kind: generic`** (the default, preferred path) -- the module's state is reachable through VEL core's built-in, config-driven generic binding (reusing existing transport/provider capabilities declared purely in configuration). **This requires no new code at all.**
+   - **`kind: plugin`** -- only if the module's native interface genuinely cannot be expressed by the generic binding (as is the case for Lifecycle, whose state requires two distinct native `mw::com` service connections with source-specific payload decoding). In this case, implement the module's `IStateFieldBindingProvider` realization as its own **independently built and deployed binding artifact**, versioned separately from VEL core, and point the collector config's `fieldBindingProvider.plugin` block at it. The shared `PluginLoader` (`source-collector-interface-design.md` Section 3.6) discovers and loads it **purely from that configuration** -- at no point is VEL core source modified, a collector subclass added, a hard-coded factory/registration list updated, or VEL core rebuilt.
 
-No new Mapper, Validator, or Normalizer class is written per module -- `ConfigDrivenStateMapper`, the Schema Validator, and the Normalization Processor are built once and reused by every S-CORE module collector.
+No new Mapper, Validator, Normalizer class, or `SCoreCollector` subclass is ever written per module -- `SCoreCollector` itself is one generic class, instantiated per module purely from its `VehicleEvidenceCollector` config, and `ConfigDrivenStateMapper`, the Schema Validator, and the Normalization Processor are built once and reused by every S-CORE module collector regardless of which binding kind that module uses.
+
+**Lifecycle's own realization is the `kind: plugin` case**, not the default: its `LifecycleFieldBindings` plugin is required specifically because of its native dual-connection interface (Section 2.4), and is the only Lifecycle-specific artifact in this entire design -- it is built and deployed independently of VEL core, as described in `lifecycle-collector.yaml`'s `fieldBindingProvider` block (Section 1).
 
 ## 8. Traceability
 

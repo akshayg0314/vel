@@ -6,10 +6,10 @@ artifacts:
   - path: manifest.yaml
     digest: d6a8ce33ae320df72e556c1fd64c1a56e0ac1406c7ff2cdd25a6ef30d62968b6
   - path: collectors/lifecycle-collector.yaml
-    digest: 3630e47925727b2404f9a407da4d9edc3497ad33d98f82101babab8745c0a4e9
+    digest: e2a5bb94a699f87a6170d07488dfdd8d4a2489f46329c9b6ad38091419615ede
   - path: schemas/score-lifecycle-state-v1.0.0.yaml
-    digest: 6d8bd4aad3e9a0bc7bf831d77c55bdf70584a15a7c023ff751b141e9cbfd7ef9
+    digest: fac4a00046bac6f3919599dad1b936a9869dafe6c0d097a0ce370afe3eb825b3
   - path: mappings/score-lifecycle-to-evidence-v1.0.0.yaml
-    digest: 1ade31e685adf7f7c5c1edeb9baeb6b2a5960675586b78a6e1606c32c38095b2
+    digest: 0723fcc45acbfd5f66e6be26a2ef680db41bb3f49f5da4bca839354f30664d13
   - path: tests/lifecycle-normalization-vectors.yaml
     digest: b5067a75494b6772a7abadc65953518dda2338e35cafb416a601ed23d3e10f70

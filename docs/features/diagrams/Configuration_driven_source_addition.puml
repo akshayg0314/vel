@@ -14,20 +14,35 @@ skinparam noteBorderColor #BFC0C0
 
 start
 :Define Input Interface Definition
-(RawEvidenceSchema) for the module's state;
+(RawEvidenceSchema) for the module's state
+-- including, for any interface-specific
+state/error field, a `conversion` block
+(values map + onUnmapped: preserveOriginal);
 :Define Normalization Mapping
 (EvidenceNormalizationRule) for the module's state;
-#FFF1E9:Implement a thin <Module>FieldBindings adapter
-(implements shared IStateFieldBindingProvider)
-that reads the module's state via its S-CORE API;
+:Add a VehicleEvidenceCollector config
+declaring source_ref/collector_id and a
+fieldBindingProvider block;
+if (Can the module's state be read via existing\ngeneric transport/provider capabilities,\ndeclared purely in fieldBindingProvider config?) then (yes)
+  :Set fieldBindingProvider.kind: generic;
+  #C8E6C9:No new code. GenericFieldBindings\n(built into VEL core) is config-driven;
+else (no -- genuinely native interface)
+  #FFF1E9:Implement a plugin binding\n(implements shared IStateFieldBindingProvider)\nas an INDEPENDENTLY BUILT AND DEPLOYED\nartifact, built/versioned\nseparately from VEL core;
+  :Set fieldBindingProvider.kind: plugin\nwith library/entryPoint/settings;
+  #C8E6C9:PluginLoader loads it at runtime via a\nstable C-ABI entry point, purely from\nthis config -- no VEL core change, no\ncollector subclass, no hard-coded\nfactory entry, no VEL core rebuild;
+endif
 stop
 
 note right
-No new Mapper, Validator, or Normalizer class is written.
-ConfigDrivenStateMapper, SchemaValidator, and
-NormalizationProcessor are shared, config-driven
-infrastructure (see Collector_common_class_diagram.puml).
-No changes to common VEL processing behavior
-are required (FR-VEL-012, FR-VEL-013/014/015).
+No new Mapper, Validator, or Normalizer class is ever written, and no
+new SCoreCollector subclass is ever written either.
+ConfigDrivenStateMapper, SchemaValidator, NormalizationProcessor, and
+SCoreCollector itself are shared, config-driven infrastructure (see
+Collector_common_class_diagram.puml). Enum-to-string conversion for
+interface-specific state/error values is likewise config-driven,
+executed generically by ConfigDrivenStateMapper from each field's
+`conversion` block -- never hard-coded in a binding or plugin.
+No changes to common VEL processing behavior are required
+(FR-VEL-012, FR-VEL-013/014/015).
 end note
 @enduml

@@ -14,7 +14,7 @@ skinparam packageBorderColor #2D3142
 skinparam packageBackgroundColor #FFFFFF
 skinparam packageFontColor #2D3142
 
-package "Common Collector Hierarchy (every source category)" {
+package "Common Collector Hierarchy (every source category)" as CollectorHierarchy {
   abstract class SourceCollector {
     +collector_id : string
     +source_ref : string
@@ -27,7 +27,7 @@ package "Common Collector Hierarchy (every source category)" {
     +health_probe() : health_status
   }
 
-  abstract class SCoreCollector {
+  class SCoreCollector {
     +source_ref : string = "score.<module>"
     +collector_id : string = "<module>-collector"
     +transport : Transport = s-core-api
@@ -54,10 +54,18 @@ package "Common Collector Hierarchy (every source category)" {
   note right of SCoreCollector
     • S-CORE-specific naming/transport conventions, layered
       on SourceCollector (see s-core-collector-common-design.md)
-    • One subclass per S-CORE module; a module-specific
-      concrete collector (e.g. LifecycleCollector) extends this
-      further. See <module>-collector-design.md for each
-      concrete collector.
+    • CONCRETE (non-abstract) class: ONE generic class,
+      instantiated per module purely from that module's
+      VehicleEvidenceCollector config (source_ref, collector_id,
+      schema/mapping refs); no per-module subclass exists.
+      "Abstract" in the design docs means "not hard-coded per
+      module in source", NOT "cannot be instantiated" -- this
+      class is directly instantiated from configuration.
+    • Which IStateFieldBindingProvider realization a given
+      instance uses (generic vs. plugin) is itself selected
+      by that module's fieldBindingProvider config -- see
+      the Shared Engine package below and Section 3.6 of
+      source-collector-interface-design.md.
   end note
 
   note right of RuntimeCollector
@@ -81,18 +89,43 @@ package "Common Collector Hierarchy (every source category)" {
   SourceCollector <|-- HardwareCollector : extends
 }
 
-package "Shared Config-Driven State-Mapping Engine (reused by every collector)" {
+' Package-level dependency: the collector hierarchy USES the shared engine.
+' This makes the cross-package relationship explicit at a glance.
+CollectorHierarchy ..> SharedEngine : uses
+
+package "Shared Config-Driven State-Mapping Engine (reused by every collector)" as SharedEngine {
   interface IStateFieldBindingProvider {
     +field_names() : list<string>
     +read_field(field_name : string) : any
     +subscribe(on_update : callback) : bool
   }
 
+  class RawEvidenceSchema {
+    +name : string
+    +version : string
+    +fields : list<Field>
+  }
+
+  class GenericFieldBindings {
+    -fieldBindingProvider config : object
+    +field_names() : list<string>
+    +read_field(field_name : string) : any
+    +subscribe(on_update : callback) : bool
+  }
+
+  class PluginLoader {
+    +load(fieldBindingProvider config) : IStateFieldBindingProvider*
+    +unload(provider : IStateFieldBindingProvider*) : void
+  }
+
   class ConfigDrivenStateMapper {
     -schema_ref : RawEvidenceSchema
     +map_to_raw_record(bindings : IStateFieldBindingProvider) : object
     +validate_required_fields() : bool
+    +apply_field_conversions() : void
   }
+
+  ConfigDrivenStateMapper ..> RawEvidenceSchema : driven by
 
   class CollectorDiagnostics {
     +error_code : string
@@ -104,51 +137,87 @@ package "Shared Config-Driven State-Mapping Engine (reused by every collector)" 
     +emit() : AdapterDiagnostic
   }
 
-  SourceCollector ..> IStateFieldBindingProvider : uses (via a module-specific adapter)
+  package "Externally-loaded Plugin (built & versioned independently of VEL core)" #FFF1E9 {
+    class "<Module>FieldBindings\n(e.g. LifecycleFieldBindings)" as ExternalPlugin <<plugin artifact>> {
+      +field_names() : list<string>
+      +read_field(field_name : string) : any
+      +subscribe(on_update : callback) : bool
+    }
+  }
+
+  ' SourceCollector's dependency on IStateFieldBindingProvider is implied
+  ' through ConfigDrivenStateMapper (SourceCollector -> Mapper -> Provider),
+  ' so the redundant direct arrow is removed to avoid implying SourceCollector
+  ' touches the provider directly.
   SourceCollector ..> ConfigDrivenStateMapper : uses
   SourceCollector ..> CollectorDiagnostics : reports via
   ConfigDrivenStateMapper ..> IStateFieldBindingProvider : reads fields via
+  PluginLoader ..> IStateFieldBindingProvider : instantiates (generic or plugin)
+  GenericFieldBindings .up.|> IStateFieldBindingProvider : implements
+  ExternalPlugin .up.|> IStateFieldBindingProvider : implements (across plugin boundary)
+  PluginLoader ..> GenericFieldBindings : constructs when kind=generic
+  PluginLoader ..> ExternalPlugin : loads + versioned C-ABI\nentry point when kind=plugin
 
   note right of IStateFieldBindingProvider
-    • ONE shared interface implemented by every module's thin
-      field-binding adapter (e.g. LifecycleFieldBindings,
-      PersistencyFieldBindings, a future NpuFieldBindings, ...)
-    • Adding a new source requires implementing ONLY this
-      interface + a new RawEvidenceSchema / EvidenceNormalizationRule
-      config -- no new Mapper, Validator, or Normalizer class
-    • read_field() covers synchronous/pull-based sources; subscribe()
-      covers event-driven/push-based sources (e.g. Lifecycle's
-      external monitor notification capability) -- the adapter
-      registers via subscribe() and, on each event, atomically swaps
-      in one immutable snapshot of the full event payload; read_field()
-      calls within one collection cycle all resolve against that
-      same snapshot (never torn across two event generations)
-    • subscribe() returns bool (true = this adapter has an
-      event-driven source and registered on_update; false = this
-      adapter is pull-only and on_update will never be invoked).
-      This lets the Runtime/Mapper call subscribe() uniformly on
-      every adapter without assuming push support, instead of
-      forcing pull-only adapters to implement a silent no-op.
-    • any (read_field's return type) is implemented in C++ as
-      std::any (or std::variant<T...> where the field-type set is
-      closed); ConfigDrivenStateMapper knows each field's declared
-      type from the RawEvidenceSchema and performs a checked
-      std::any_cast<T>() (or std::get<T>()) against it, so type
-      safety is recovered at the mapper boundary rather than in
-      the interface signature itself.
+    • ONE shared, module-neutral interface -- never a
+      module-specific class compiled into VEL core
+    • Two realizations, selected per-collector by
+      fieldBindingProvider config (kind: generic | plugin):
+      - GenericFieldBindings: built into VEL core,
+        config-driven. Default; no new code.
+      - External plugin (e.g. LifecycleFieldBindings):
+        independently built/deployed artifact, loaded via
+        a versioned C-ABI entry point -- only
+        when the native interface needs code generic
+        binding can't express
+    • read_field(): pull-based; subscribe(): push-based
+      (atomically swaps in one immutable snapshot per
+      event; read_field() stays consistent within a cycle)
+    • subscribe() returns bool (true = event-driven path
+      registered; false = pull-only, on_update unused).
+      Distinct from S-CORE's own subscribe() APIs (e.g.
+      IExtMonitorNotify, which returns Result<void>)
+    • Returns RAW native values only (e.g. "kRunning"),
+      never evidence-vocabulary strings -- conversion is
+      ConfigDrivenStateMapper.apply_field_conversions()'s
+      job, driven by each field's `conversion` block
+  end note
+
+  note right of PluginLoader
+    • Shared VEL-core component, NOT module-specific
+    • Reads a collector's fieldBindingProvider config; if
+      kind=generic, constructs GenericFieldBindings directly;
+      if kind=plugin, resolves plugin.library, looks up
+      the versioned C-ABI entry point named by plugin.entryPoint,
+      checks the plugin's reported ABI version, and calls
+      it with plugin.settings to obtain an IStateFieldBindingProvider*
+    • Holds NO built-in list of known plugins/modules -- every
+      plugin is discovered solely from its own collector's config
+    • See source-collector-interface-design.md Section 3.6
   end note
 
   note right of ConfigDrivenStateMapper
     • Built ONCE, reused by every collector of every source category
+      and every binding kind (generic or plugin) -- cannot tell
+      the difference and does not need to
     • Driven entirely by the source's RawEvidenceSchema config
-      (field name / path / type / required)
+      (field name / path / type / required / conversion) -- the
+      RawEvidenceSchema class shown here is the config artifact
+      (e.g. score-lifecycle-state-v1.0.0.yaml)
     • Builds the schema-conformant raw_state_records generically by
       iterating schema fields and pulling values from the
       IStateFieldBindingProvider -- zero per-source mapper code
+    • apply_field_conversions(): for each field with a `conversion`
+      block, looks up the raw value returned by read_field()/
+      subscribe() in conversion.values; if found, substitutes the
+      mapped evidence string; if NOT found (unmappedValue: unknown),
+      writes the canonical string "unknown" -- never rejects, never
+      preserves the raw value verbatim. See
+      source-collector-interface-design.md Section 3.7.
     • Pull vs push is NOT a concern of the mapper: read_field(name)
       may resolve against a synchronous API call made on the spot, or
       against a cached snapshot most recently delivered through
-      subscribe(on_update) -- the adapter encapsulates which, and the
+      subscribe(on_update) -- the binding encapsulates which, and the
       mapper treats every field identically
   end note
 
@@ -160,6 +229,7 @@ package "Shared Config-Driven State-Mapping Engine (reused by every collector)" 
     • See source-collector-interface-design.md Sec 5
   end note
 }
+
 
 package "Enums" {
   enum CollectionTrigger {
@@ -197,10 +267,13 @@ package "Enums" {
 
 note bottom
   **Module-specific example (see Lifecycle_collector_class_diagram.puml):**
-  LifecycleCollector extends SCoreCollector; LifecycleFieldBindings
-  implements IStateFieldBindingProvider. These are the ONLY Lifecycle-specific
-  classes -- ConfigDrivenStateMapper and CollectorDiagnostics above are reused
-  unchanged.
+  The SCoreCollector instance for Lifecycle is configured, not subclassed
+  (source_ref=score.lifecycle, collector_id=lifecycle-collector). Its
+  fieldBindingProvider config selects kind=plugin, so PluginLoader loads
+  LifecycleFieldBindings as an external plugin implementing
+  IStateFieldBindingProvider. This plugin artifact is the ONLY Lifecycle-specific
+  artifact -- ConfigDrivenStateMapper and CollectorDiagnostics above are reused
+  unchanged, and VEL core contains no Lifecycle-specific class.
 end note
 
 SourceCollector ..> CollectionTrigger : typed by

@@ -28,22 +28,17 @@ spec:
       when: {fieldExists: $.state}
       output: {evidenceType: s-core.lifecycle.component.state}
       value:
+        # No transform here: $.state already holds the final evidence string.
+        # Native-enum-to-string conversion (known values mapped; unrecognized values mapped to "unknown")
+        # is performed upstream, at raw-record build time, driven by the `conversion` block declared on this field in the RawEvidenceSchema (score-lifecycle-state-v1.0.0.yaml) and executed generically by the shared ConfigDrivenStateMapper -- not by this mapping or by any Lifecycle-specific code. See source-collector-interface-design.md Section 3.7.
         sourcePath: $.state
         targetPath: $.observation.state
-        transform:
-          operation: enumMap
-          values: {idle: idle, starting: starting, running: running, terminating: terminating, terminated: terminated, failed: failed}
-          unmappedValue: unknown
     - id: lifecycle-previous-state
       when: {fieldExists: $.previous_state}
       output: {evidenceType: s-core.lifecycle.component.previous_state}
       value:
         sourcePath: $.previous_state
         targetPath: $.observation.state
-        transform:
-          operation: enumMap
-          values: {idle: idle, starting: starting, running: running, terminating: terminating, terminated: terminated, failed: failed}
-          unmappedValue: unknown
     - id: lifecycle-transition-time
       when: {fieldExists: $.transition_time_ns}
       output: {evidenceType: s-core.lifecycle.component.transition_time}
@@ -56,12 +51,10 @@ spec:
       when: {fieldExists: $.details.graph_state}
       output: {evidenceType: s-core.lifecycle.process-group.state}
       value:
+        # See note on lifecycle-component-state: conversion already applied
+        # upstream via the schema's `conversion` block; this is a passthrough.
         sourcePath: $.details.graph_state
         targetPath: $.observation.state
-        transform:
-          operation: enumMap
-          values: {success: success, in-transition: in-transition, aborting: aborting, cancelled: cancelled, undefined-state: undefined-state}
-          unmappedValue: unknown
     - id: lifecycle-exit-code
       when: {fieldExists: $.details.exit_code}
       output: {evidenceType: s-core.lifecycle.process.exit_code}
@@ -89,12 +82,10 @@ spec:
       when: {fieldExists: $.details.supervision_status}
       output: {evidenceType: s-core.lifecycle.health.supervision_status}
       value:
+        # See note on lifecycle-component-state: conversion already applied
+        # upstream via the schema's `conversion` block; this is a passthrough.
         sourcePath: $.details.supervision_status
         targetPath: $.observation.state
-        transform:
-          operation: enumMap
-          values: {ok: ok, failed: failed}
-          unmappedValue: unknown
     - id: lifecycle-failed-supervision-type
       when: {fieldExists: $.details.failed_supervision_type}
       output: {evidenceType: s-core.lifecycle.health.failed_supervision_type}
@@ -166,5 +157,8 @@ spec:
   failureHandling:
     missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
     invalidValue: {result: emit-invalid-evidence, preserveOriginalValue: true}
+    # unmappedEnum here covers normalization-stage enumMap transforms only
+    # (none remain in this mapping's evidenceMappings -- see notes above).
+    # Consistent with the schema-level `conversion.unmappedValue: unknown` policy: an unrecognized raw value is mapped to the canonical string "unknown" (with mappingQuality: unmapped) rather than rejected or preserved as its original value. See source-collector-interface-design.md Section 3.7.
     unmappedEnum: {result: emit-unknown, mappingQuality: unmapped}
     transformationError: {result: reject, emitAdapterDiagnostic: true}

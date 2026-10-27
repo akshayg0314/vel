@@ -59,16 +59,71 @@ Every collector produces the following output:
 
 ### 3.5 Config-Driven State Mapping (common collector internals)
 
-How a collector internally builds its `raw_state_records` (Section 3.3) is itself common infrastructure, not something each source category or module reimplements:
+How a collector internally builds its `raw_state_records` (Section 3.3) is itself common infrastructure, not something each source category or module reimplements, and — critically — adding a new source does **not** imply writing a new source-specific class:
 
-- **`IStateFieldBindingProvider`** — a shared interface (`field_names()` / `read_field(name)` / `subscribe(on_update)`). Each source implements exactly one thin adapter against this interface (e.g. `LifecycleFieldBindings` for the S-CORE Lifecycle module), wrapping that source's native read calls (API, file, command, OS interface). This adapter is the **only** source-specific code in the mapping path. `read_field()` covers synchronous/pull-based sources; `subscribe()` covers event-driven/push-based sources (e.g. Lifecycle's `ext_monitor_notify` callback) — the adapter registers via `subscribe()` and caches the latest value internally, which subsequent `read_field()` calls then return. **Consistency convention for push-based adapters:** on each push event, the adapter builds one immutable snapshot from the full event payload and atomically swaps it in (e.g. `std::atomic<std::shared_ptr<const T>>`), rather than updating per-field mutable state. `ConfigDrivenStateMapper` takes a single snapshot load at the start of each collection cycle, so every `read_field()` call for push-origin fields within one raw record resolves against the same event generation, even if a new push event arrives mid-cycle. This avoids torn records that mix fields from two different events. **Pull-only adapters:** `subscribe()` is part of the interface signature for every adapter, regardless of source category, so the Evidence Runtime and `ConfigDrivenStateMapper` can call it uniformly without per-source conditional logic. An adapter for a purely pull-based source (one with no event-driven/push API) implements `subscribe()` as a no-op: it accepts and stores the `on_update` callback (or simply returns) but never invokes it, since every field it exposes is served directly by `read_field()`. This is not an error or missing capability — it is the expected, valid implementation for a pull-only source.
-- **`ConfigDrivenStateMapper`** — built once, shared by every collector regardless of source category. Given a source's `RawEvidenceSchema` config and an `IStateFieldBindingProvider`, it builds the schema-conformant `raw_state_records` generically by iterating the configured fields (name/path/type/required) and pulling each value from the bindings. It contains no per-source logic.
+- **`IStateFieldBindingProvider`** — one shared, module-neutral interface (`field_names()` / `read_field(name)` / `subscribe(on_update)`) that every source's field values are read through. This interface is also the **stable plugin contract** (Section 3.6): whether a given source's implementation of it lives inside VEL core (generic binding) or outside VEL core as an independently loaded plugin, `ConfigDrivenStateMapper` and every other common component see only this one interface. `read_field()` covers synchronous/pull-based sources; `subscribe()` covers event-driven/push-based sources (e.g. Lifecycle's `ext_monitor_notify` callback) — the implementation registers via `subscribe()` and caches the latest value internally, which subsequent `read_field()` calls then return. **Consistency convention for push-based sources:** on each push event, the implementation builds one immutable snapshot from the full event payload and atomically swaps it in (e.g. `std::atomic<std::shared_ptr<const T>>`), rather than updating per-field mutable state. `ConfigDrivenStateMapper` takes a single snapshot load at the start of each collection cycle, so every `read_field()` call for push-origin fields within one raw record resolves against the same event generation, even if a new push event arrives mid-cycle. This avoids torn records that mix fields from two different events. **Pull-only sources:** `subscribe()` is part of the interface signature regardless of source category, so the Evidence Runtime and `ConfigDrivenStateMapper` can call it uniformly without per-source conditional logic. An implementation for a purely pull-based source implements `subscribe()` as a no-op: it accepts and stores the `on_update` callback (or simply returns) but never invokes it, since every field it exposes is served directly by `read_field()`. This is not an error or missing capability — it is the expected, valid implementation for a pull-only source.
+- **Two ways to realize `IStateFieldBindingProvider` for a given source** (selected per-collector by configuration — see Section 3.6):
+  1. **Generic binding (no new code at all).** A built-in, config-driven implementation shipped in VEL core that reuses existing transport/provider capabilities (e.g., a generic DDS/file/command reader) purely by interpreting the source's `fieldBindingProvider` configuration — which fields exist, how each maps to an underlying transport read/subscribe call, and which are included/excluded. This is the **default, preferred path**: most sources need nothing beyond a `RawEvidenceSchema`, an `EvidenceNormalizationRule`, and a collector configuration.
+  2. **Plugin binding (only when generic binding cannot express the native interface).** When a source's native API genuinely cannot be reached through the generic binding's declarative transport/provider capabilities (e.g., Lifecycle's two distinct `mw::com` service connections, one pull and one push, each with source-specific payload decoding), the module's binding logic is implemented as an **independently built and deployed plugin** — a binding artifact built and versioned separately from VEL core, implementing only this stable `IStateFieldBindingProvider` contract, and loaded at runtime per Section 3.6. This plugin is the **only** source-specific code such a module ever needs; it is never compiled into VEL core, never added as a VEL-core collector subclass, and never registered in a hard-coded factory list.
+- **`ConfigDrivenStateMapper`** — built once, shared by every collector regardless of source category or binding kind. Given a source's `RawEvidenceSchema` config and an `IStateFieldBindingProvider` (generic or plugin-provided — the mapper cannot tell the difference and does not need to), it builds the schema-conformant `raw_state_records` generically by iterating the configured fields (name/path/type/required/`conversion` — Section 3.7) and pulling each value from the bindings. It contains no per-source logic.
 
-This directly satisfies FR-VEL-012 (Platform Collector Separation) and FR-VEL-013 (Input Interface Configuration) at the collector-implementation level, not only at the schema level: adding a new source requires only a new `RawEvidenceSchema`, a new `EvidenceNormalizationRule`, a collector configuration, and one thin binding adapter — never a new Mapper, Validator, or Normalizer class.
+This directly satisfies FR-VEL-012 (Platform Collector Separation) and FR-VEL-013 (Input Interface Configuration) at the collector-implementation level, not only at the schema level: adding a new source requires only a new `RawEvidenceSchema`, a new `EvidenceNormalizationRule`, and a collector configuration — and, **only if the generic binding cannot reach the source's native interface**, one independently built/deployed plugin. Either way, VEL core itself is never modified, no collector subclass is added, no hard-coded factory/registration list is updated, and VEL core is never rebuilt to add a module.
 
 ![Common collector and config-driven state mapping class diagram](../../../features/assets/Collector_common_class_diagram.svg)
 
 [PlantUML source](../../../features/diagrams/Collector_common_class_diagram.puml)
+
+### 3.6 Plugin Discovery and Loading
+
+A collector's configuration selects, per Section 3.5, whether its `IStateFieldBindingProvider` is the built-in generic binding or an externally loaded plugin:
+
+```yaml
+spec:
+  fieldBindingProvider:
+    kind: generic   # or: plugin
+    plugin:                                   # present only when kind: plugin
+      library: plugins/<module>-field-bindings
+      abiVersion: 1
+      entryPoint: vel_plugin_create_binding_provider
+      settings:                               # opaque, plugin-defined settings
+        transport: s-core-api
+        api: <module>-state-api
+```
+
+- **`kind: generic`** — the Evidence Runtime instantiates the built-in generic binding directly; no library is loaded.
+- **`kind: plugin`** — the Evidence Runtime's **`PluginLoader`** component (shared, part of VEL core, not module-specific) does the following, purely driven by this configuration:
+  1. Resolves `plugin.library` against the Evidence Runtime's configured plugin directory. The resolved path must stay inside that directory; paths that escape it (absolute paths outside it, `..` segments) are rejected with `CONFIGURATION_ERROR`.
+  2. Loads the plugin artifact (the deployment model — an in-process shared library via `dlopen`, or an out-of-process provider reached over IPC — is a deployment decision; the C-ABI contract below is identical in either case).
+  3. Resolves a **stable, versioned C-ABI entry point** by name (`plugin.entryPoint`, e.g. `vel_plugin_create_binding_provider`).
+  4. Checks the plugin's reported ABI version (an exported `extern "C" int vel_plugin_abi_version()`, or an equivalent version field returned by the entry point) against the ABI version VEL core supports, and refuses to load on mismatch (`CONFIGURATION_ERROR`).
+  5. Calls the entry point, passing `plugin.settings` (opaque to VEL core, meaningful only to the plugin), and receives an `IStateFieldBindingProvider*` instance plus a matching `extern "C" void vel_plugin_destroy_binding_provider(IStateFieldBindingProvider*)` teardown function.
+- **Failure handling.** Any failure in steps 1-5 (library not found, missing symbol, ABI mismatch, instantiation error) is reported as `CONFIGURATION_ERROR` through `CollectorDiagnostics`; the affected collector does not start, and other collectors are unaffected. On collector stop, the loader calls the plugin's destroy function and then unloads the plugin.
+- **No hard-coded registry.** `PluginLoader` holds no built-in list of known plugins or module names. Every plugin is discovered solely from the `library`/`entryPoint` path declared in that collector's own configuration. Adding a new plugin-backed module means: build the plugin as its own independently versioned artifact, deploy it alongside VEL, and point a new collector configuration at it — **zero changes to VEL core source, zero new collector subclasses, zero VEL core rebuild.**
+- **Stable plugin contract.** The plugin never implements anything beyond `IStateFieldBindingProvider` (Section 3.5) plus the two C-ABI entry points above. It does not implement `ConfigDrivenStateMapper`, `CollectorDiagnostics`, schema validation, or normalization — those remain shared VEL-core infrastructure, untouched by any plugin.
+- **Deployment-model note.** The plugin deployment model (in-process shared library vs. out-of-process provider) is intentionally not fixed by this contract; both are compatible with the stable C-ABI entry points above. If an in-process shared library is chosen, a plugin crash can affect the hosting Evidence Runtime process; that trade-off is accepted for lower latency and simpler deployment, with `CollectorDiagnostics`/`health_probe()` (Section 4.3) and process-level supervision by the Evidence Runtime's host (e.g., restart-on-crash) as mitigation. An out-of-process provider would instead isolate plugin faults behind the IPC boundary, at the cost of additional deployment and IPC overhead.
+
+### 3.7 Field Value Conversion (common collector internals)
+
+Interface-specific state and error values (e.g., a Lifecycle `ProcessState` enum value) are converted to their evidence string representation by a **shared, configuration-driven conversion step inside `ConfigDrivenStateMapper`**, never by source-specific code in the binding (generic or plugin):
+
+- Each `RawEvidenceSchema` field **may** declare an optional `conversion` block alongside its `type`/`path`/`required` attributes:
+  ```yaml
+  - name: state
+    path: $.state
+    type: string
+    required: true
+    conversion:
+      operation: enumMap
+      sourceValueKind: enum
+      values: {kIdle: idle, kStarting: starting, kRunning: running, kTerminating: terminating, kTerminated: terminated, kFailed: failed}
+      unmappedValue: unknown
+  ```
+- The binding (generic or plugin) returns the **raw, native value exactly as observed from the source** (e.g., the literal enum label `kRunning`) from `read_field()`/`subscribe()` — it performs no string conversion itself.
+- `ConfigDrivenStateMapper` looks up that raw value in the field's `conversion.values` map and substitutes the mapped evidence string. If the raw value is **not** present in `values` (a genuinely new or unrecognized value — e.g., a future `ProcessState` member VEL's configuration has not yet been updated to map), the mapper writes the canonical string `unmappedValue` (default `"unknown"`) — the raw record is never rejected, and the original raw value is not preserved verbatim. This matches the reviewer-aligned position that an unrecognized interface-specific value is surfaced as the canonical `"unknown"` string rather than being preserved or rejected.
+- Consequently, interface-specific state/error fields are declared `type: string` in the schema (never `type: enum`/`allowedValues`), because VEL does not — and architecturally should not — own a closed enumeration of every current and future interface-specific value. `conversion.values` documents and normalizes the **currently known** aliases for readability and consistency; it does not constrain which values the field may ever hold, and an unrecognized value is never rejected — it is mapped to `"unknown"`.
+- Example: the Lifecycle `kRunning → "running"` step in the Lifecycle sequence diagram uses this mechanism. The conversion rule is declared once in `score-lifecycle-state-v1.0.0.yaml` and executed generically by `ConfigDrivenStateMapper` — `LifecycleFieldBindings` (whether generic or plugin-provided) contains no enum-to-string logic of its own.
+
+
 
 ## 4. Collector Lifecycle
 
@@ -185,6 +240,13 @@ spec:
     transport: <s-core-api | dds | file | command | os-interface>
     api: "<source-specific-api-or-topic>"
     messageType: <MessageType>
+  fieldBindingProvider:
+    kind: <generic | plugin>          # Section 3.6
+    plugin:                            # present only when kind: plugin
+      library: plugins/<source>-field-bindings
+      abiVersion: 1
+      entryPoint: vel_plugin_create_binding_provider
+      settings: {}                     # opaque, plugin-defined
   inputSchemaRef:
     name: <input-schema-name>
     version: 1.0.0
@@ -217,6 +279,8 @@ spec:
 | Collector lifecycle | **This document** (common, all source categories) |
 | Error & diagnostic reporting | **This document** (common, all source categories) |
 | Config-driven state mapping (`IStateFieldBindingProvider`, `ConfigDrivenStateMapper`) | **This document, Section 3.5** (common, all source categories) |
+| Plugin discovery/loading (generic vs. plugin binding, `PluginLoader`, ABI contract) | **This document, Section 3.6** (common, all source categories) |
+| Field value conversion (`conversion` block, unmapped-value preservation) | **This document, Section 3.7** (common, all source categories) |
 | S-CORE module collector conventions | [s-core-state-collection/s-core-collector-common-design.md](s-core-state-collection/s-core-collector-common-design.md) |
 | S-CORE module API surface / state fields / transport path | [s-core-state-collection/collectors/lifecycle-collector-design.md](s-core-state-collection/collectors/lifecycle-collector-design.md) (per module) |
 | Runtime and hardware collector conventions | Not yet drafted |

@@ -8,6 +8,24 @@ spec:
     transport: s-core-api
     api: lifecycle-state-api
     messageType: ScoreLifecycleState
+  fieldBindingProvider:
+    # Selects how IStateFieldBindingProvider is realized for this collector.
+    # kind: generic   -> built-in, config-driven binding (no plugin, no new code).
+    # kind: plugin     -> independently built/deployed shared library, loaded by
+    #                      the VEL core's PluginLoader via dlopen at startup,
+    #                      resolved purely from this config (no VEL core change,
+    #                      no collector subclass, no hard-coded factory entry).
+    # Lifecycle requires `plugin` because its state is only reachable through
+    # native mw::com service connections (ILmControl pull + IExtMonitorNotify
+    # push) that the generic binding cannot express declaratively.
+    kind: plugin
+    plugin:
+      library: plugins/liblifecycle-field-bindings.so
+      abiVersion: 1
+      entryPoint: vel_plugin_create_binding_provider
+      settings:
+        transport: s-core-api
+        api: lifecycle-state-api
   inputSchemaRef:
     name: score-lifecycle-state
     version: 1.0.0

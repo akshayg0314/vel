@@ -45,12 +45,12 @@ Normalizer --> Publisher : normalized Vehicle Evidence
 Publisher --> Topic : DDS publish (reliable)
 
 note right of Collector
-  * LifecycleCollector extends SCoreCollector
-    (s-core-collector-common-design.md)
-  * SCoreCollector extends SourceCollector
-    (source-collector-interface-design.md)
-  * Internally delegates to LifecycleFieldBindings
-    (Lifecycle-specific) and the shared
+  * SCoreCollector (instantiated from lifecycle-collector.yaml)
+    extends SourceCollector
+    (s-core-collector-common-design.md,
+    source-collector-interface-design.md)
+  * Reads fields through LifecycleFieldBindings (a
+    plugin loaded from config) and the shared
     ConfigDrivenStateMapper -- see
     Collector_common_class_diagram.puml and
     Lifecycle_collector_class_diagram.puml for the

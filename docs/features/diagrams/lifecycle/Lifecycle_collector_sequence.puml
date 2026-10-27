@@ -14,12 +14,31 @@ skinparam noteBorderColor #BFC0C0
 participant "Launch Manager" as LM #A8D8EA
 
 ' VEL Evidence Ingestion participants (green/amber)
-participant "VEL Lifecycle\nCollector" as Collector #C5E1A5
-participant "LifecycleFieldBindings\n(IStateFieldBindingProvider)" as Bindings #C5E1A5
+participant "PluginLoader\n(shared)" as Loader #C5E1A5
+participant "VEL Lifecycle\nCollector (SCoreCollector)" as Collector #C5E1A5
+participant "LifecycleFieldBindings\n(IStateFieldBindingProvider,\nexternal plugin artifact)" as Bindings #FFE0B2
 participant "ConfigDrivenStateMapper\n(shared)" as Mapper #C5E1A5
 participant "Schema Validator" as Validator #C5E1A5
 participant "Normalization\nProcessor" as Normalizer #C5E1A5
 participant "Vehicle Evidence\nPublisher" as Publisher #C5E1A5
+
+== Plugin Resolution (collector startup, once) ==
+Collector -> Loader : load(fieldBindingProvider config)\nfrom lifecycle-collector.yaml
+note right of Loader
+  * fieldBindingProvider.kind == "plugin" for Lifecycle (its native
+    interface -- two distinct mw::com connections -- cannot be
+    expressed by VEL core's generic, declarative binding)
+  * Loader resolves plugin.library (lifecycle-field-bindings),
+    loads it, resolves the versioned C-ABI entry point named by
+    plugin.entryPoint, checks the reported ABI version, and
+    calls it with plugin.settings
+  * Loader holds NO Lifecycle-specific knowledge -- this exact
+    sequence is identical for any other plugin-backed module
+  * See source-collector-interface-design.md Section 3.6
+end note
+Loader -> Bindings : load + vel_plugin_create_binding_provider(settings)
+Bindings --> Loader : IStateFieldBindingProvider* instance
+Loader --> Collector : IStateFieldBindingProvider* instance
 
 == Initialization & Event Subscription ==
 Collector -> Bindings : subscribe(on_update)
@@ -92,23 +111,40 @@ group Cached Push Field Reads (from local cache)
       arrives mid-cycle).
   end note
   Mapper -> Bindings : read_field("state")
-  Bindings --> Mapper : snapshot.process_state\n(normalized to schema string)
+  Bindings --> Mapper : snapshot.process_state\n(RAW native enum label, e.g. "kRunning")
   note right of Bindings
-    * LifecycleFieldBindings normalizes C++ enum to schema
-      string: kIdle->"idle", kStarting->"starting",
-      kRunning->"running", kTerminating->"terminating",
-      kTerminated->"terminated", kFailed->"failed"
+    * LifecycleFieldBindings returns the RAW native value exactly as
+      observed (e.g. the literal ProcessState enum label "kRunning")
+      -- it performs NO enum-to-string conversion itself.
+  end note
+  Mapper -> Mapper : apply_field_conversions()\nfor "state": look up "kRunning" in\nscore-lifecycle-state-v1.0.0.yaml's\nstate.conversion.values map
+  note right of Mapper
+    * Conversion is config-driven and executed by the SHARED
+      ConfigDrivenStateMapper (see source-collector-interface-design.md
+      Section 3.7), NOT by LifecycleFieldBindings:
+      kIdle->"idle", kStarting->"starting", kRunning->"running",
+      kTerminating->"terminating", kTerminated->"terminated",
+      kFailed->"failed" (declared once, in configuration).
+    * unmappedValue: unknown -- if a future raw value isn't in the
+      configured map (e.g. a new ProcessState member VEL's
+      configuration hasn't been updated for yet), the mapper writes
+      the canonical string "unknown". The raw record is never
+      rejected, and the original raw value is not preserved verbatim.
+    * This exact mechanism applies identically to every other
+      conversion-bearing field below (graph_state, supervision_status,
+      failed_supervision_type, deadline_error, heartbeat_error,
+      logic_error) -- omitted per-field for diagram brevity.
   end note
   Mapper -> Bindings : read_field("pid")
   Bindings --> Mapper : snapshot.pid
   Mapper -> Bindings : read_field("graph_state")
-  Bindings --> Mapper : snapshot.graph_state
+  Bindings --> Mapper : snapshot.graph_state\n(RAW native enum label)
   Mapper -> Bindings : read_field("exit_code")
   Bindings --> Mapper : snapshot.exit_code
   Mapper -> Bindings : read_field("supervision_status")
-  Bindings --> Mapper : snapshot.supervision_status
+  Bindings --> Mapper : snapshot.supervision_status\n(RAW native enum label)
   Mapper -> Bindings : read_field("failed_supervision_type")
-  Bindings --> Mapper : snapshot.failed_supervision_type
+  Bindings --> Mapper : snapshot.failed_supervision_type\n(RAW native enum label)
   Mapper -> Bindings : read_field("process_execution_error")
   Bindings --> Mapper : snapshot.process_execution_error
   note right of Bindings
@@ -122,13 +158,14 @@ group Cached Push Field Reads (from local cache)
   end note
 end
 
-Mapper -> Mapper : iterate score-lifecycle-state\nRawEvidenceSchema fields,\nbuild raw record generically
-Mapper --> Collector : raw state record\n(score-lifecycle-state schema)
+Mapper -> Mapper : iterate score-lifecycle-state\nRawEvidenceSchema fields,\napply_field_conversions(),\nbuild raw record generically
+Mapper --> Collector : raw state record\n(score-lifecycle-state schema,\nconversion-bearing fields already\nholding final evidence strings)
 note right of Mapper
   * ConfigDrivenStateMapper is SHARED across every
     S-CORE module collector, not Lifecycle-specific
   * Driven entirely by the score-lifecycle-state
-    RawEvidenceSchema config -- zero Lifecycle-specific
+    RawEvidenceSchema config (including each field's
+    `conversion` block) -- zero Lifecycle-specific
     logic in the mapper itself
 end note
 

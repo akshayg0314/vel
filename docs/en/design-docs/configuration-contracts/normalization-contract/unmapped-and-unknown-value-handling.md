@@ -83,6 +83,10 @@ failureHandling:
 
 **Default unmapped behavior:** The default for unmapped enum/lookup values is **`emit-unknown`** with `mappingQuality: unmapped`. However, each mapping MAY override this to **`reject`** for deployments that require strict rejection of any unmapped value. This balances preserving evidence with a quality signal against the strictness some deployments require.
 
+### 3.6 Source-boundary conversion (interface-specific state/error fields)
+
+For interface-specific state/error fields whose value set is owned by an upstream source (for example S-CORE Lifecycle's native enums), the enum-to-string conversion is declared in the field's `conversion` block in the `RawEvidenceSchema` and executed by the shared `ConfigDrivenStateMapper` at the collector boundary, before this normalization stage (see [source-collector-interface-design.md Section 3.7](../../evidence-ingestion/source-collector-interface-design.md#37-field-value-conversion-common-collector-internals)). Its `unmappedValue: unknown` policy surfaces an unrecognized raw value as the canonical string `"unknown"`, so the raw record is never rejected for it and such fields do not need an `enumMap` with an `unmappedValue: unknown` here. Mappings for those fields use `unmappedEnum: {result: emit-unknown}` as a safety net.
+
 ## 4. Configuration Format
 
 ### 4.1 enumMap with unmappedValue
