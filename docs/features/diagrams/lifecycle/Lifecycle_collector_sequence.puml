@@ -5,35 +5,193 @@ skinparam shadowing false
 skinparam roundCorner 8
 skinparam ArrowColor #4F5D75
 skinparam sequenceParticipantBorderColor #2D3142
-skinparam sequenceParticipantBackgroundColor #FFFFFF
 skinparam sequenceParticipantFontColor #2D3142
 skinparam sequenceLifeLineBorderColor #7A8399
 skinparam noteBackgroundColor #FFFFFF
 skinparam noteBorderColor #BFC0C0
 
-participant "Launch Manager" as LM
-participant "Health Monitor" as HM
-participant "Graph /\nProcessInfoNode" as State
-participant "VEL Lifecycle\nCollector" as Collector
-participant "Schema Validator" as Validator
-participant "Normalization\nProcessor" as Normalizer
+' S-CORE source-side participants (blue/teal)
+participant "Launch Manager" as LM #A8D8EA
 
-Collector -> State : graph.getState()
-State --> Collector : GraphState (kSuccess, kInTransition, ...)
-Collector -> State : process_node.getState()
-State --> Collector : ProcessState (kIdle, kStarting, kRunning, ...)
+' VEL Evidence Ingestion participants (green/amber)
+participant "PluginLoader\n(shared)" as Loader #C5E1A5
+participant "VEL Lifecycle\nCollector (SCoreCollector)" as Collector #C5E1A5
+participant "LifecycleFieldBindings\n(IStateFieldBindingProvider,\nexternal plugin artifact)" as Bindings #FFE0B2
+participant "ConfigDrivenStateMapper\n(shared)" as Mapper #C5E1A5
+participant "Schema Validator" as Validator #C5E1A5
+participant "Normalization\nProcessor" as Normalizer #C5E1A5
+participant "Vehicle Evidence\nPublisher" as Publisher #C5E1A5
 
-note over Collector, LM
-pid / exit_code / process_execution_error are NOT exposed via a getter;
-they arrive only through the external monitor notification callback.
+== Plugin Resolution (collector startup, once) ==
+Collector -> Loader : load(fieldBindingProvider config)\nfrom lifecycle-collector.yaml
+note right of Loader
+  * fieldBindingProvider.kind == "plugin" for Lifecycle (its native
+    interface -- two distinct mw::com connections -- cannot be
+    expressed by VEL core's generic, declarative binding)
+  * Loader resolves plugin.library (lifecycle-field-bindings),
+    loads it, resolves the versioned C-ABI entry point named by
+    plugin.entryPoint, checks the reported ABI version, and
+    calls it with plugin.settings
+  * Loader holds NO Lifecycle-specific knowledge -- this exact
+    sequence is identical for any other plugin-backed module
+  * See source-collector-interface-design.md Section 3.6
+end note
+Loader -> Bindings : load + vel_plugin_create_binding_provider(settings)
+Bindings --> Loader : IStateFieldBindingProvider* instance
+Loader --> Collector : IStateFieldBindingProvider* instance
+
+== Initialization & Event Subscription ==
+Collector -> Bindings : subscribe(on_update)
+note right of Bindings
+  * Collector passes on_update callback to Bindings;
+    Bindings independently registers with LM.
+    Collector is not a party to the LM registration.
+end note
+Bindings -> LM : register ext_monitor_notify callback\n(via IExtMonitorNotify event service)
+LM --> Bindings : registration confirmed
+
+== Asynchronous Event Push (on process/monitor state change) ==
+LM -> Bindings : ext_monitor_notify callback\n(ProcessMonitorNotify payload)
+Bindings -> Bindings : build new immutable snapshot\nand atomically swap it in
+note right of Bindings
+  * ProcessMonitorNotify payload delivers:
+  * process identity (process_name, process_group_name)
+  * process state (ProcessState), pid
+  * graph state (GraphState)
+  * exit_code, process_execution_error
+  * supervision_status, failed_supervision_type
+  * failed_supervision_cycles, deadline_error
+  * heartbeat_error, logic_error, deadline_violation
+  * alive_indication_count, process_group_id
+  * recovery_state
+  * Supervision fields originate from Health Monitor (PHM);
+    LM is the callback emitter to LifecycleFieldBindings.
+  * state, pid, graph_state are delivered via this push --
+    VEL does NOT call ProcessInfoNode::getState()/getPid()
+    or Graph::getState() directly; those are Launch Manager
+    daemon-internal classes not reachable cross-process.
+  * LifecycleFieldBindings builds one immutable snapshot
+    struct from the full payload and atomically swaps it in,
+    so subsequent read_field() queries within one collection
+    cycle all observe the same notification generation.
+  * Implements shared IStateFieldBindingProvider
 end note
 
-LM -> Collector : ext_monitor_notify callback\n(pid, exit_code, process_execution_error)
-HM -> Collector : supervision status\n(deadline / heartbeat / logic)
+== Collection Cycle ==
+Collector -> Mapper : map_to_raw_record(bindings)
 
-Collector -> Collector : map fields to raw state record\n(score-lifecycle-state schema)
-Collector -> Validator : raw state record
-Validator --> Collector : schema-valid / reject
-Collector -> Normalizer : validated raw state record
-Normalizer --> Collector : normalized Vehicle Evidence
+group Pull Field Read (synchronous API call)
+  Mapper -> Bindings : read_field("run_target")
+  Bindings -> LM : get_active_run_target()\n(via ILmControl service)
+  LM --> Bindings : run_target string
+  note right of Bindings
+    * run_target is the ONLY pull field from LM, via the
+      synchronous ILmControl::get_active_run_target() API
+      (Startup/Off/Fallback).
+    * All supervision/state/pid fields are push-only via
+      ext_monitor_notify (never polled via
+      get_active_run_target()).
+  end note
+  Bindings --> Mapper : run_target value
+end
+
+group Cached Push Field Reads (from local cache)
+  note over Mapper, Bindings
+    * Bindings takes a single atomic snapshot of all cached
+      push fields (an immutable struct swapped in on each
+      ext_monitor_notify) at the START of this group -- not
+      re-read individually per field.
+    * read_field(field_name) is called once per field
+      (IStateFieldBindingProvider signature:
+      read_field(field_name: string)), but every call within
+      this group resolves against that ONE snapshot.
+    * Guarantees all push-origin fields in a single raw
+      record originate from the same notification generation
+      (no torn/mixed reads even if a new ext_monitor_notify
+      arrives mid-cycle).
+  end note
+  Mapper -> Bindings : read_field("state")
+  Bindings --> Mapper : snapshot.process_state\n(RAW native enum label, e.g. "kRunning")
+  note right of Bindings
+    * LifecycleFieldBindings returns the RAW native value exactly as
+      observed (e.g. the literal ProcessState enum label "kRunning")
+      -- it performs NO enum-to-string conversion itself.
+  end note
+  Mapper -> Mapper : apply_field_conversions()\nfor "state": look up "kRunning" in\nscore-lifecycle-state-v1.0.0.yaml's\nstate.conversion.values map
+  note right of Mapper
+    * Conversion is config-driven and executed by the SHARED
+      ConfigDrivenStateMapper (see source-collector-interface-design.md
+      Section 3.7), NOT by LifecycleFieldBindings:
+      kIdle->"idle", kStarting->"starting", kRunning->"running",
+      kTerminating->"terminating", kTerminated->"terminated",
+      kFailed->"failed" (declared once, in configuration).
+    * unmappedValue: unknown -- if a future raw value isn't in the
+      configured map (e.g. a new ProcessState member VEL's
+      configuration hasn't been updated for yet), the mapper writes
+      the canonical string "unknown". The raw record is never
+      rejected, and the original raw value is not preserved verbatim.
+    * This exact mechanism applies identically to every other
+      conversion-bearing field below (graph_state, supervision_status,
+      failed_supervision_type, deadline_error, heartbeat_error,
+      logic_error) -- omitted per-field for diagram brevity.
+  end note
+  Mapper -> Bindings : read_field("pid")
+  Bindings --> Mapper : snapshot.pid
+  Mapper -> Bindings : read_field("graph_state")
+  Bindings --> Mapper : snapshot.graph_state\n(RAW native enum label)
+  Mapper -> Bindings : read_field("exit_code")
+  Bindings --> Mapper : snapshot.exit_code
+  Mapper -> Bindings : read_field("supervision_status")
+  Bindings --> Mapper : snapshot.supervision_status\n(RAW native enum label)
+  Mapper -> Bindings : read_field("failed_supervision_type")
+  Bindings --> Mapper : snapshot.failed_supervision_type\n(RAW native enum label)
+  Mapper -> Bindings : read_field("process_execution_error")
+  Bindings --> Mapper : snapshot.process_execution_error
+  note right of Bindings
+    * Remaining push fields (deadline_error, heartbeat_error,
+      logic_error, deadline_violation, failed_supervision_cycles,
+      alive_indication_count, process_group_id, recovery_state)
+      follow the same one-field-per-read_field() call pattern,
+      all resolved against the same snapshot taken above;
+      omitted above for diagram brevity only -- never batched
+      into a single multi-argument call.
+  end note
+end
+
+Mapper -> Mapper : iterate score-lifecycle-state\nRawEvidenceSchema fields,\napply_field_conversions(),\nbuild raw record generically
+Mapper --> Collector : raw state record\n(score-lifecycle-state schema,\nconversion-bearing fields already\nholding final evidence strings)
+note right of Mapper
+  * ConfigDrivenStateMapper is SHARED across every
+    S-CORE module collector, not Lifecycle-specific
+  * Driven entirely by the score-lifecycle-state
+    RawEvidenceSchema config (including each field's
+    `conversion` block) -- zero Lifecycle-specific
+    logic in the mapper itself
+end note
+
+Collector -> Collector : produce collection_metadata\n(timestamp, duration, record_count=1 pre-populated)
+note right of Collector
+  * record_count is pre-populated as 1 for this cycle.
+  * Final accepted/rejected count is reflected in health_status
+    updated at the end of the cycle (after validation outcome).
+end note
+Collector -> Validator : raw state record + collection_metadata
+alt schema-valid
+  Validator --> Collector : schema-valid
+  Collector -> Normalizer : validated raw state record
+  Normalizer -> Publisher : normalized Vehicle Evidence
+  Publisher -> Publisher : DDS publish\n(ScoreNormalizedEvidence, reliable)
+  note right of Publisher
+    * DDS reliable delivery: transport layer
+      guarantees async delivery
+    * Collector monitors VEL health via
+      ScoreEvidenceLayerHealth topic
+    * No synchronous ack from Publisher
+  end note
+else schema-invalid / reject
+  Validator --> Collector : reject + AdapterDiagnostic
+  Collector -> Collector : drop record,\nemit diagnostic
+end
+
+Collector -> Collector : update health_status\n(state, last_collection, collection_count,\nerror_count, last_error, uptime_seconds)
 @enduml

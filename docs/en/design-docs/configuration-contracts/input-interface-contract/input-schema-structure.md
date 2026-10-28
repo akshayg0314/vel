@@ -1,7 +1,7 @@
 # Input Schema Structure and Required Fields
 
 > **Related:** FR-VEL-013 (Input Interface Configuration), STKH-VEL-013
-> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
+> **Reference example:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
 
 ## 1. Purpose
 
@@ -34,6 +34,7 @@ Each Input Interface Definition has:
   - `type` — the data type (string, number, integer, uint64, boolean, enum, etc.).
   - `required` — whether the field must be present.
   - Optional constraints: `range`, `allowedValues`, `pattern`, `minimum`, `maximum`.
+  - Optional `conversion` — see Section 3.7 (common collector internals) of [source-collector-interface-design.md](../../evidence-ingestion/source-collector-interface-design.md#37-field-value-conversion-common-collector-internals). Used for fields whose raw values originate from an interface-specific, potentially open-ended value set (e.g. a native enum that may grow in future source releases): declares a `values` map from currently known raw labels to their evidence string form, plus an `unmappedValue` (default `"unknown"`) for values not yet in that map — an unrecognized raw value is surfaced as that canonical string rather than rejected or preserved verbatim. **Fields using `conversion` are declared `type: string`, not `type: enum`/`allowedValues`** — see Section 3.5 below for when to prefer one over the other.
 - **Additional fields policy** — `reject` or `allow` for fields not declared in the schema.
 
 The input contract is **validator-agnostic**: the contract format is independent of any specific schema validator engine. The concrete validator and its supported constraint types are selected by the deployment.
@@ -72,7 +73,7 @@ The input contract supports the following field types:
 Fields may declare constraints that the Schema Validator enforces:
 
 - `range: {minimum, maximum}` — numeric bounds.
-- `allowedValues: [..]` — enumerated values.
+- `allowedValues: [..]` — enumerated values. **Reserve `type: enum`/`allowedValues` for genuinely closed, VEL-owned/VEL-controlled value sets** (e.g. a fixed configuration choice). For a field whose value set is defined by an external, interface-specific source (an upstream module's native enum, an error code table, etc.) that may add new members over time, prefer `type: string` with a `conversion` block (Section 3.3) instead — this lets the raw record always carry a valid, non-rejected value even when the source introduces something VEL's configuration does not yet recognize (surfaced as the canonical `"unknown"` string via `unmappedValue`).
 - `pattern` — regex pattern for strings.
 - `required: true/false` — presence requirement.
 
@@ -137,4 +138,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-013, STKH-VEL-013 |
-| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| Reference example | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

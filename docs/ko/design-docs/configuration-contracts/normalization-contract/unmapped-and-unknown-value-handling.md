@@ -1,7 +1,7 @@
 # 매핑되지 않은 값 및 알 수 없는 값 처리
 
 > **관련:** FR-VEL-005 (소스 정규화), FR-VEL-009 (Evidence 품질 메타데이터), STKH-VEL-005, STKH-VEL-009
-> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
+> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml)
 
 ## 1. 목적
 
@@ -83,6 +83,10 @@ failureHandling:
 
 **기본 매핑되지 않은 동작:** 매핑되지 않은 enum/조회 값의 기본값은 `mappingQuality: unmapped`를 사용한 **`emit-unknown`** 입니다. 그러나 각 매핑은 엄격한 거부를 요구하는 배포를 위해 **`reject`** 로 재정의할 수 있습니다. 이는 품질 신호로 evidence를 보존하는 것과 일부 배포에 필요한 엄격성 사이의 균형을 유지합니다.
 
+### 3.6 소스 경계 변환(인터페이스별 상태/오류 필드)
+
+값 집합이 업스트림 소스(예: S-CORE Lifecycle의 네이티브 enum)에 속하는 인터페이스별 상태/오류 필드의 경우, enum-문자열 변환은 `RawEvidenceSchema`의 필드 `conversion` 블록에 선언되고 공유 `ConfigDrivenStateMapper`에 의해 수집기 경계에서 실행되며, 이 정규화 단계 이전에 수행됩니다([source-collector-interface-design.md 섹션 3.7](../../evidence-ingestion/source-collector-interface-design.md#37-field-value-conversion-common-collector-internals) 참조). 해당 `unmappedValue: unknown` 정책은 인식되지 않은 원시 값을 표준 문자열 `"unknown"`으로 표시하므로, 원시 레코드가 이로 인해 거부되지 않으며 이러한 필드는 여기에 `unmappedValue: unknown`이 있는 `enumMap`이 필요하지 않습니다. 해당 필드에 대한 매핑은 안전망으로 `unmappedEnum: {result: emit-unknown}`을 사용합니다.
+
 ## 4. 구성 형식
 
 ### 4.1 unmappedValue가 있는 enumMap
@@ -140,4 +144,4 @@ failureHandling:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-005, FR-VEL-009, STKH-VEL-005, STKH-VEL-009 |
-| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) |

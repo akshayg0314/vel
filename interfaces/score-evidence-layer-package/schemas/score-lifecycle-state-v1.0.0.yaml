@@ -17,14 +17,22 @@ spec:
     - {name: timestamp_ns, path: $.timestamp_ns, type: uint64, required: true}
     - name: state
       path: $.state
-      type: enum
+      type: string
       required: true
-      allowedValues: [idle, starting, running, terminating, terminated, failed]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kIdle: idle, kStarting: starting, kRunning: running, kTerminating: terminating, kTerminated: terminated, kFailed: failed}
+        unmappedValue: unknown
     - name: previous_state
       path: $.previous_state
-      type: enum
+      type: string
       required: false
-      allowedValues: [idle, starting, running, terminating, terminated, failed]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kIdle: idle, kStarting: starting, kRunning: running, kTerminating: terminating, kTerminated: terminated, kFailed: failed}
+        unmappedValue: unknown
     - {name: transition_time_ns, path: $.transition_time_ns, type: uint64, required: false}
     - name: run_target
       path: $.details.run_target
@@ -34,35 +42,59 @@ spec:
     - {name: pid, path: $.details.pid, type: uint32, required: false}
     - name: graph_state
       path: $.details.graph_state
-      type: enum
+      type: string
       required: false
-      allowedValues: [success, in-transition, aborting, cancelled, undefined-state]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kSuccess: success, kInTransition: in-transition, kAborting: aborting, kCancelled: cancelled, kUndefinedState: undefined-state}
+        unmappedValue: unknown
     - name: supervision_status
       path: $.details.supervision_status
-      type: enum
+      type: string
       required: false
-      allowedValues: [ok, failed]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kOk: ok, kFailed: failed}
+        unmappedValue: unknown
     - {name: failed_supervision_cycles, path: $.details.failed_supervision_cycles, type: uint32, required: false}
     - name: failed_supervision_type
       path: $.details.failed_supervision_type
-      type: enum
+      type: string
       required: false
-      allowedValues: [heartbeat, deadline, logic]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kHeartbeat: heartbeat, kDeadline: deadline, kLogic: logic}
+        unmappedValue: unknown
     - name: deadline_error
       path: $.details.deadline_error
-      type: enum
+      type: string
       required: false
-      allowedValues: [too_early, too_late]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kTooEarly: too_early, kTooLate: too_late}
+        unmappedValue: unknown
     - name: heartbeat_error
       path: $.details.heartbeat_error
-      type: enum
+      type: string
       required: false
-      allowedValues: [too_early, too_late, multiple_heartbeats]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kTooEarly: too_early, kTooLate: too_late, kMultipleHeartbeats: multiple_heartbeats}
+        unmappedValue: unknown
     - name: logic_error
       path: $.details.logic_error
-      type: enum
+      type: string
       required: false
-      allowedValues: [invalid_state, invalid_transition, unmapped_error]
+      conversion:
+        operation: enumMap
+        sourceValueKind: enum
+        values: {kInvalidState: invalid_state, kInvalidTransition: invalid_transition, kUnmappedError: unmapped_error}
+        unmappedValue: unknown
     - {name: deadline_violation, path: $.details.deadline_violation, type: bool, required: false}
     - {name: alive_indication_count, path: $.details.alive_indication_count, type: uint32, required: false}
     - {name: process_execution_error, path: $.details.process_execution_error, type: uint32, required: false}

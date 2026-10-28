@@ -6,8 +6,7 @@ metadata:
 spec:
   owner: score
   primaryLayer: evidence
-  collectorConfigs:
-    - collectors/lifecycle-collector.yaml
+  collectorConfig: collectors/lifecycle-collector.yaml
   artifacts:
     - {path: README.md, role: documentation}
     - {path: collectors/lifecycle-collector.yaml, role: collector-config}

@@ -1,7 +1,7 @@
 # Evidence 품질 메타데이터 필드
 
 > **관련:** FR-VEL-009 (Evidence 품질 메타데이터), STKH-VEL-009
-> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **참조 예시:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. 목적
 
@@ -98,4 +98,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-009, STKH-VEL-009 |
-| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| 참조 예시 | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

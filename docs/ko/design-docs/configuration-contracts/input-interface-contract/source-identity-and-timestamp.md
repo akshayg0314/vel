@@ -1,7 +1,7 @@
 # 소스 식별 및 타임스탬프 요구사항
 
 > **관련:** FR-VEL-006 (소스 식별 메타데이터), FR-VEL-007 (관찰 시간 메타데이터), FR-VEL-008 (상관 메타데이터), STKH-VEL-006, STKH-VEL-007, STKH-VEL-008
-> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
+> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml)
 
 ## 1. 목적
 
@@ -97,4 +97,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-006, FR-VEL-007, FR-VEL-008, STKH-VEL-006, STKH-VEL-007, STKH-VEL-008 |
-| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

@@ -12,5 +12,5 @@ artifacts:
   - path: schemas/vendor-a-npu-status-v1.2.0.yaml
     digest: 81125150c7cfce133fa68893ec23c75f7f09f65df7bcc936106d4d48bb6977f4
   - path: tests/normalization-vectors.yaml
-    digest: 31fd246af9c850a02678cee0fa3b512e3789316f5cdee2b84fd0ebd3aa7ac9f4
+    digest: fcac683f8e9e43080310b3844763057c5765faec082650aef08a63f710b01529
 

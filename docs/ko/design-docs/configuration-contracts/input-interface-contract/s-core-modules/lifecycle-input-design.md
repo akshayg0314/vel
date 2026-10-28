@@ -8,22 +8,24 @@
 
 | 관찰 가능 항목 | S-CORE 소스 |
 | --- | --- |
-| 컴포넌트 상태 (idle/starting/running/terminating/terminated/failed) | `ProcessState` 열거형 (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`) |
-| 실행 대상 (문자열 이름, 예: "Startup", "Off", "Fallback") | `RunTargetConfig.name` (임의 문자열, 고정 열거형 아님) |
-| 프로세스 그룹 / 종속성 그래프 상태 | `GraphState` 열거형 |
+| 컴포넌트 상태 (idle/starting/running/terminating/terminated/failed) | `ProcessState` 열거형 (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`); 외부 모니터 알림 기능을 통해 전달됨 |
+| 실행 대상 (문자열 이름, 예: "Startup", "Off", "Fallback") | `RunTargetConfig.name` (임의 문자열, 고정 열거형 아님); `ILmControl::get_active_run_target()`을 통해 동기적으로 읽힘 |
+| 프로세스 그룹 / 종속성 그래프 상태 | `GraphState` 열거형; 외부 모니터 알림 기능을 통해 전달됨 |
 | 프로세스 그룹 식별자 | `IdentifierHash` (문자열 기반; 섹션 2 참고) |
-| 프로세스 종료 코드, PID | Launch Manager 외부 모니터 알림 |
+| 프로세스 종료 코드 | Launch Manager 외부 모니터 알림 |
+| 프로세스 PID | Launch Manager 외부 모니터 알림 |
 | Health Monitor 감독 상태 | 데드라인 / 로직 / 하트비트 모니터 상태, 집계됨 (VEL 파생) |
 | 복구 상태 | `recovery_state_` — 하드코딩된 `IdentifierHash("fallback")` (폴백 실행 대상 이름) |
 
-**VEL 수집기가 사용하는 S-CORE API:** Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
+**VEL 수집기가 사용하는 S-CORE API:** `ILmControl::get_active_run_target()` (유일한 동기식/풀 필드인 `run_target`용), 그 외 모든 필드 (state, pid, graph_state, exit_code, process_execution_error, process_group_id, recovery_state, 감독 필드)용 Launch Manager 외부 모니터 알림 (`comp_req__launch_man__ext_monitor_notify`).
 
-> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `pid`, `exit_code`, `process_execution_error`를 포함한 모든 라이프사이클 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
+> **접근성 참고:** VEL은 안정적이고 공개된 외부 API를 통해 노출된 데이터만 수집할 수 있습니다. `run_target`은 `ILmControl::get_active_run_target()`을 통해 노출됩니다. `state`, `pid`, `graph_state`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state` 및 모든 Health Monitor 감독 필드는 `comp_req__launch_man__ext_monitor_notify`를 통해 노출됩니다. `ProcessInfoNode`와 `Graph`는 외부 VEL 프로세스에서 접근할 수 없는 Launch Manager 데몬 내부 클래스입니다. 전체 접근성 경계는 evidence 수집 문서의 S-CORE 모듈 수집기 API 설계를 참조하세요.
 
 ## 2. 소스별 참고 사항
 
+
 - **`process_group_id`는 `string`이며 `uint32`가 아닙니다.** `IdentifierHash` (`lifecycle/score/launch_manager/src/daemon/src/common/identifier_hash.hpp`)로, 숫자 핸들이 아닌 문자열 파생 식별자를 래핑합니다.
-- **`previous_state`는 `enum`이며 `string`이 아닙니다.** `state`와 동일한 `allowedValues`를 사용합니다 (둘 다 `ProcessState`).
+- **`state`와 `previous_state`는 `string`이며 `enum`이 아닙니다.** 둘 다 동일한 `ProcessState` 네이티브 enum을 관찰하고 동일한 `conversion.values` 맵을 공유하지만, VEL은 이들에 대한 폐쇄된 값 집합을 소유하지 않습니다; 인식되지 않은 raw 값은 표준 문자열 `"unknown"`으로 표시됩니다(`unmappedValue: unknown`). `graph_state`, `supervision_status`, `failed_supervision_type`, `deadline_error`, `heartbeat_error`, `logic_error`에도 동일하게 적용됩니다. 상위 S-CORE enum은 변경되지 않습니다; 변환은 구성에 선언되고 공유 `ConfigDrivenStateMapper`가 실행하는 바인딩 경계에서 발생합니다.
 - **`run_target`은 `string`이며 제한된 열거형이 아닙니다.** `RunTargetConfig.name` (`config.hpp`)은 임의 문자열입니다 (예: "Startup", "Off", "Fallback", "Running", "SafeState"). 실행 대상 이름은 통합자가 정의하며 고정된 `[debug, production, test]` 집합이 아닙니다.
 - **`recovery_state`는 `string`이며 복구 프로세스 상태 머신이 아닙니다.** 소스는 `recovery_state_`를 하드코딩된 `const IdentifierHash recovery_state_{"fallback"}` (`process_group_manager.hpp`)로 정의합니다. 이는 `[idle, timeout, sending, waiting_for_response]` 상태 머신이 아닌 폴백 실행 대상 이름을 나타냅니다. 복구 메커니즘은 간단한 `sendRecoveryRequest` → `handleRecoveryRequest` → 폴백 실행 대상으로 전환입니다.
 - **`recovery_action`은 의도적으로 이 스키마의 일부가 아닙니다.** 소스는 서로 다른 선택적 구성 슬롯 (`ready_recovery_action` / `recovery_action`)에서 사용되는 두 개의 별개 구성 구조체 (`recovery_action_config.hpp`의 `RestartAction`, `SwitchRunTargetAction`)를 정의하며, 단일 태그된 유니온/열거형이 아닙니다. 현재는 `recovery_state` (폴백 실행 대상 이름)만 수집됩니다.
@@ -80,7 +82,7 @@
 
 스키마에 대한 주요 사항 (소스에 대해 검증됨):
 
-- `state` / `previous_state`: `enum`, 값 `[idle, starting, running, terminating, terminated, failed]` (`ProcessState`와 일치).
+- `state` / `previous_state`: `enumMap` `conversion`이 있는 `string` (알려진 네이티브 라벨 `kIdle`..`kFailed`가 `idle, starting, running, terminating, terminated, failed`로 매핑됨; 인식되지 않은 값은 변경 없이 보존됨).
 - `process_group_id`: `string` (섹션 2 참조).
 - `run_target`: `string` (섹션 2 참조) — 임의 실행 대상 이름, 고정 열거형 아님.
 - `recovery_state`: `string` (섹션 2 참조) — 폴백 실행 대상 이름 (`"fallback"`), 복구 상태 머신 아님.

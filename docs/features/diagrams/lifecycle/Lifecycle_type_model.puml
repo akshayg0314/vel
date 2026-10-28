@@ -1,5 +1,6 @@
 @startuml
-title S-CORE Lifecycle | Type Model (Process / Recovery)
+title S-CORE Lifecycle | Type Model (Process / Recovery / Health Monitor)
+left to right direction
 skinparam backgroundColor #F5F5F5
 skinparam shadowing false
 skinparam roundCorner 8
@@ -10,61 +11,133 @@ skinparam classFontColor #2D3142
 skinparam classAttributeFontColor #2D3142
 skinparam noteBackgroundColor #FFFFFF
 skinparam noteBorderColor #BFC0C0
+skinparam nodesep 30
+skinparam ranksep 30
 
-enum ProcessState {
-  kIdle = 0
-  kStarting = 1
-  kRunning = 2
-  kTerminating = 3
-  kTerminated = 4
-  kFailed = 5
+package "Process & Graph State" {
+  enum ProcessState {
+    kIdle = 0
+    kStarting = 1
+    kRunning = 2
+    kTerminating = 3
+    kTerminated = 4
+    kFailed = 5
+  }
+
+  enum GraphState {
+    kSuccess = 0
+    kInTransition = 1
+    kAborting = 2
+    kCancelled = 3
+    kUndefinedState = 4
+  }
+
+  class ProcessInfoNode {
+    +getPid() : osal::ProcessID
+    +getState() : ProcessState
+    +getTerminationTimeout() : milliseconds
+    +getControlClientChannel() : ControlClientChannelP
+  }
+
+  ProcessInfoNode --> ProcessState : getState()
+
+  note left of ProcessInfoNode
+    * pid exposed via getPid()
+    * exit_code, process_execution_error: no getter
+    * process_group_id, recovery_state: on HealthMonitorState
+    * All 4 via ext_monitor_notify callback
+    * Supervision fields: callback-only
+  end note
 }
 
-enum GraphState {
-  kSuccess = 0
-  kInTransition = 1
-  kAborting = 2
-  kCancelled = 3
-  kUndefinedState = 4
+package "Health Monitor State" {
+  enum SupervisionStatus {
+    kOk = 0
+    kFailed = 1
+  }
+
+  enum FailedSupervisionType {
+    kHeartbeat = 0
+    kDeadline = 1
+    kLogic = 2
+  }
+
+  enum DeadlineError {
+    kTooEarly = 0
+    kTooLate = 1
+  }
+
+  enum HeartbeatError {
+    kTooEarly = 0
+    kTooLate = 1
+    kMultipleHeartbeats = 2
+  }
+
+  enum LogicError {
+    kInvalidState = 0
+    kInvalidTransition = 1
+    kUnmappedError = 2
+  }
+
+  class HealthMonitorState {
+    +exit_code : int32
+    +supervision_status : SupervisionStatus
+    +failed_supervision_type : FailedSupervisionType
+    +failed_supervision_cycles : uint32
+    +deadline_error : DeadlineError
+    +heartbeat_error : HeartbeatError
+    +logic_error : LogicError
+    +deadline_violation : bool
+    +alive_indication_count : uint32
+    +process_execution_error : uint32
+    +process_group_id : string
+    +recovery_state : string
+  }
+
+  HealthMonitorState --> SupervisionStatus : supervision_status
+  HealthMonitorState --> FailedSupervisionType : failed_supervision_type
+  HealthMonitorState --> DeadlineError : deadline_error
+  HealthMonitorState --> HeartbeatError : heartbeat_error
+  HealthMonitorState --> LogicError : logic_error
+
+  note right of HealthMonitorState
+    * Populated by ext_monitor_notify callback
+    * All fields map to score-lifecycle-state schema
+  end note
 }
 
-class ProcessInfoNode {
-  +getPid() : osal::ProcessID
-  +getState() : ProcessState
-  +getTerminationTimeout() : milliseconds
-  +getControlClientChannel() : ControlClientChannelP
+package "Deployment & Recovery Config" {
+  class DeploymentConfig {
+    +ready_timeout_ms : uint32
+    +shutdown_timeout_ms : uint32
+    +ready_recovery_action : optional<RestartAction>
+    +recovery_action : optional<SwitchRunTargetAction>
+  }
+
+  class ComponentConfig {
+    +name : string
+    +description : string
+    +component_properties : ComponentProperties
+    +deployment_config : DeploymentConfig
+  }
+
+  class RestartAction {
+    +number_of_attempts : uint32
+    +delay_before_restart_ms : uint32
+  }
+
+  class SwitchRunTargetAction {
+    +run_target : string
+  }
+
+  ' Composition relationships are implicit in the field declarations above
+  ' (e.g., DeploymentConfig.ready_recovery_action : optional<RestartAction>)
+  ' No explicit arrows needed since the field types are visible in the class bodies.
+
+  note left of DeploymentConfig
+    * Two DISTINCT structs in two optional slots
+    * Not a tagged union / single enum
+    * Only one slot populated per config
+  end note
 }
-
-class RestartAction {
-  +number_of_attempts : uint32
-  +delay_before_restart_ms : uint32
-}
-
-class SwitchRunTargetAction {
-  +run_target : string
-}
-
-class ComponentConfig {
-  +ready_recovery_action : optional<RestartAction>
-  +recovery_action : optional<SwitchRunTargetAction>
-}
-
-ProcessInfoNode --> ProcessState : getState()
-ComponentConfig "1" o-- "0..1" RestartAction : ready_recovery_action
-ComponentConfig "1" o-- "0..1" SwitchRunTargetAction : recovery_action
-
-note right of ComponentConfig
-RestartAction and SwitchRunTargetAction are two
-DISTINCT config structs in two DIFFERENT optional
-slots -- not a tagged union / single enum.
-Only one slot is populated per component config.
-end note
-
-note bottom of ProcessInfoNode
-exit_code, pid (outside getPid()), and
-process_execution_error are NOT exposed via
-getters on this class -- only observable via
-the external monitor notification callback
-(comp_req__launch_man__ext_monitor_notify).
-end note
 @enduml

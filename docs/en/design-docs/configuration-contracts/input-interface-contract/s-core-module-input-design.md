@@ -88,8 +88,8 @@ Each per-module document follows the same structure: Observable State, Source-Sp
 ## 5. Cross-Cutting Notes (apply to all modules)
 
 - **Evidence Type naming:** the final path segment of an `evidenceType` preserves the exact source field name's underscores (e.g. `deadline_error`, `process_group_id`, `supervision_status`) rather than converting `_` to `-`. Structural/category path segments (e.g. `process-group`, `parameter-set`, `health`, `message-passing`) may keep hyphens since they aren't literal field names.
-- **`previous_state`** in every module's `RawEvidenceSchema` is `type: enum` with the same `allowedValues` as that module's own `state` field, not `type: string` — a transition can only be between the states the module actually has.
-- **"No error" sentinel values:** optional error/status fields generally have no defined "no error" value in the underlying S-CORE enum. When no error is present, the field should be **omitted** from the raw record rather than set to an invented value like `none` that doesn't appear in the schema's `allowedValues`.
+- **Interface-specific state/error fields are `type: string` with a `conversion` block, not a closed `enum`/`allowedValues`.** `state`, `previous_state`, and any other field whose values originate from an upstream module's native enum (e.g. the Lifecycle module's `ProcessState`) must stay representable even when the source introduces a value VEL's configuration does not yet map. `previous_state` reuses the same `conversion.values` map as `state` (both observe the same underlying native enum), but **both are `type: string`** — see [source-collector-interface-design.md Section 3.7](../../evidence-ingestion/source-collector-interface-design.md#37-field-value-conversion-common-collector-internals) for the full mechanism and the Lifecycle module (Section 4 of `collectors/lifecycle-collector-design.md`) for a worked example. This rule applies to the state/error fields of every S-CORE module schema.
+- **"No error" sentinel values:** optional error/status fields generally have no defined "no error" value in the underlying S-CORE enum. When no error is present, the field should be **omitted** from the raw record rather than set to an invented value like `none` that doesn't appear in the schema's `allowedValues` (or, for `conversion`-based fields, in `conversion.values`).
 - **TODO:** Extend cross-cutting notes for other modules (e.g., config_error, kvs_last_error_code, connection_stop_reason handling) as they are added.
 
 ## 6. Normalization Mapping Pattern
@@ -100,11 +100,13 @@ The clock domain is declared **per-source** in the Input Interface Definition (d
 
 ## 7. Configuration-Driven Source Addition
 
-Adding a new S-CORE module as a VEL source requires only configuration, following the standard pattern:
+Adding a new S-CORE module as a VEL source is **configuration first**, with an independently loaded plugin only where the generic binding cannot reach the module's native interface:
 
-1. Define the **Input Interface Definition** (`RawEvidenceSchema`) for the module's state.
+1. Define the **Input Interface Definition** (`RawEvidenceSchema`) for the module's state, using `type: string` plus a `conversion` block for interface-specific state/error fields (Section 5).
 2. Define the **Normalization Mapping** (`EvidenceNormalizationRule`) for the module's state.
-3. Implement a **platform-specific collector** that reads the module's state via its S-CORE API (see [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md)).
+3. Define the **`VehicleEvidenceCollector`** configuration, whose `fieldBindingProvider` block selects `kind: generic` (built-in, no new code) or `kind: plugin` (an independently built and deployed binding artifact loaded by the shared `PluginLoader`; see [source-collector-interface-design.md Section 3.6](../../evidence-ingestion/source-collector-interface-design.md#36-plugin-discovery-and-loading) and [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md) for the Lifecycle realization).
+
+No new Mapper, Validator, Normalizer, or collector subclass is written per module, and VEL core is never modified or rebuilt to add one -- `ConfigDrivenStateMapper`, the Schema Validator, and the Normalization Processor are shared, config-driven infrastructure built once (see [Collector_common_class_diagram.puml](../../../../features/diagrams/Collector_common_class_diagram.puml)) and reused unchanged by every S-CORE module collector.
 
 ![Configuration-driven source addition](../../../../features/assets/Configuration_driven_source_addition.svg)
 

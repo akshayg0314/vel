@@ -1,0 +1,302 @@
+@startuml
+title S-CORE Lifecycle Collector | Class Diagram (LLD)
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #4F5D75
+skinparam classBorderColor #2D3142
+skinparam classBackgroundColor #FFFFFF
+skinparam classFontColor #2D3142
+skinparam classAttributeFontColor #2D3142
+skinparam noteBackgroundColor #FFFFFF
+skinparam noteBorderColor #BFC0C0
+skinparam packageBorderColor #2D3142
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageFontColor #2D3142
+
+package "VEL Evidence Ingestion (S-CORE State Collection)" {
+
+  package "Collector Hierarchy" {
+    abstract class SourceCollector {
+      +collector_id : string
+      +source_ref : string
+      +collection_trigger : CollectionTrigger
+      +collection_window : object
+      +parameters : object
+      +collect() : Result<vector<RawStateRecord>, CollectorError>
+      +get_metadata() : collection_metadata
+      +get_diagnostics() : diagnostics
+      +health_probe() : health_status
+    }
+
+    class SCoreCollector {
+      +source_ref : string = "score.<module>"
+      +collector_id : string = "<module>-collector"
+      +transport : Transport = s-core-api
+    }
+
+    SourceCollector <|-- SCoreCollector : extends
+
+    note right of SourceCollector
+      • Common VEL collector interface (all source categories)
+      • I/O API per source-collector-interface-design.md Sec 3
+      • Lifecycle state machine per Sec 4.1
+      • Error taxonomy per Sec 5.1
+    end note
+
+    note right of SCoreCollector
+      • S-CORE conventions on SourceCollector (CONCRETE)
+      • Naming: source_ref=score.<module>, collector_id=<module>-collector
+      • Transport: s-core-api
+      • One generic class; each S-CORE module = configured instance
+        (Lifecycle: source_ref=score.lifecycle, collector_id=lifecycle-collector)
+      • Binding realization (generic vs. plugin) selected via
+        fieldBindingProvider config
+    end note
+  }
+
+  package "Shared Engine" {
+    interface IStateFieldBindingProvider {
+      +field_names() : list<string>
+      +read_field(field_name : string) : any
+      +subscribe(on_update : callback) : bool
+    }
+
+    class PluginLoader {
+      +load(fieldBindingProvider config) : IStateFieldBindingProvider*
+      +unload(provider : IStateFieldBindingProvider*) : void
+    }
+
+    class ConfigDrivenStateMapper {
+      -schema_ref : RawEvidenceSchema
+      +map_to_raw_record(bindings : IStateFieldBindingProvider) : object
+      +validate_required_fields() : bool
+      +apply_field_conversions() : void
+    }
+
+    class CollectorDiagnostics {
+      +error_code : string
+      +error_category : ErrorCategory
+      +severity : Severity
+      +message : string
+      +retry_count : uint32
+      +recovery_hint : string
+      +emit() : AdapterDiagnostic
+    }
+
+    SCoreCollector ..> IStateFieldBindingProvider : uses (resolved by PluginLoader\nfrom lifecycle-collector.yaml's\nfieldBindingProvider config)
+    SCoreCollector ..> ConfigDrivenStateMapper : uses
+    SCoreCollector ..> CollectorDiagnostics : reports via
+    ConfigDrivenStateMapper ..> IStateFieldBindingProvider : reads fields via
+    PluginLoader ..> IStateFieldBindingProvider : instantiates
+
+    note right of IStateFieldBindingProvider
+      • Shared engine (collapsed); see Collector_common_class_diagram.puml
+      • Lifecycle realization = external plugin (LifecycleFieldBindings)
+      • read_field()/subscribe() return RAW native values; enum conversion
+        done by ConfigDrivenStateMapper (via schema `conversion` block)
+    end note
+
+    note right of PluginLoader
+      • Loads plugin from lifecycle-collector.yaml (kind: plugin);
+        resolves C-ABI entry point, checks ABI version, returns
+        IStateFieldBindingProvider*
+      • No Lifecycle-specific knowledge (shared by all modules)
+    end note
+  }
+
+  package "Lifecycle Native Plugin (built & deployed independently of VEL core)" #FFF1E9 {
+    class LifecycleFieldBindings <<plugin>> {
+      -transport : s-core-api = lifecycle-state-api
+      +field_names() : list<string>
+      +read_field(field_name : string) : any
+      +subscribe(on_update : callback) : bool
+    }
+
+    IStateFieldBindingProvider <|.. LifecycleFieldBindings : implements\n(via PluginLoader)
+
+    note right of LifecycleFieldBindings
+      • External plugin: built/versioned independently, loaded at
+        runtime via lifecycle-collector.yaml (kind: plugin)
+      • Exports C-ABI factory/destructor entry points
+      • Maintains TWO mw::com connections:
+        (1) ILmControl (pull) -- run_target via get_active_run_target()
+        (2) IExtMonitorNotify (push) -- ProcessMonitorNotify via
+            ext_monitor_notify callback
+      • read_field(): returns RAW native values (no enum conversion;
+        that's ConfigDrivenStateMapper's job)
+      • subscribe(): registers callback; snapshots full payload per
+        event generation (atomic swap; no mixing)
+      • Only Lifecycle-specific artifact; lives outside VEL core
+    end note
+  }
+
+  package "Enums" {
+    enum CollectionTrigger {
+      PERIODIC
+      EVENT
+      ON_DEMAND
+    }
+
+    enum Transport {
+      S_CORE_API
+      DDS
+      FILE
+      COMMAND
+      OS_INTERFACE
+    }
+
+    enum ErrorCategory {
+      CONFIGURATION_ERROR
+      SOURCE_UNAVAILABLE
+      AUTHENTICATION_ERROR
+      TIMEOUT
+      SCHEMA_VIOLATION
+      NORMALIZATION_ERROR
+      RESOURCE_EXHAUSTION
+      INTERNAL_ERROR
+    }
+
+    enum Severity {
+      INFO
+      WARNING
+      ERROR
+      FATAL
+    }
+
+    enum CollectorLifecycleState {
+      PROVISIONED
+      ACTIVE
+      RUNNING
+      SUSPENDED
+      ERROR
+      TERMINATED
+    }
+
+    SourceCollector --> CollectionTrigger : collection_trigger
+    SourceCollector --> CollectorLifecycleState : lifecycle state
+    SCoreCollector --> Transport : transport
+    CollectorDiagnostics --> ErrorCategory : error_category
+    CollectorDiagnostics --> Severity : severity
+  }
+}
+
+package "S-CORE Lifecycle (source-side types)" {
+  enum ProcessState {
+    kIdle = 0
+    kStarting = 1
+    kRunning = 2
+    kTerminating = 3
+    kTerminated = 4
+    kFailed = 5
+  }
+
+  enum GraphState {
+    kSuccess = 0
+    kInTransition = 1
+    kAborting = 2
+    kCancelled = 3
+    kUndefinedState = 4
+  }
+
+  enum SupervisionStatus {
+    kOk = 0
+    kFailed = 1
+  }
+
+  enum FailedSupervisionType {
+    kHeartbeat = 0
+    kDeadline = 1
+    kLogic = 2
+  }
+
+  enum DeadlineError {
+    kTooEarly = 0
+    kTooLate = 1
+  }
+
+  enum HeartbeatError {
+    kTooEarly = 0
+    kTooLate = 1
+    kMultipleHeartbeats = 2
+  }
+
+  enum LogicError {
+    kInvalidState = 0
+    kInvalidTransition = 1
+    kUnmappedError = 2
+  }
+
+  class ProcessInfoNode {
+    +getPid() : osal::ProcessID
+    +getState() : ProcessState
+    +getTerminationTimeout() : milliseconds
+    +getControlClientChannel() : ControlClientChannelP
+  }
+
+  note right of ProcessInfoNode
+    • INTERNAL Launch Manager daemon class
+    • NOT part of ILmControl / mw::com / external VEL access
+    • Shown only to document state/pid origin
+  end note
+
+  interface ILmControl {
+    +get_active_run_target() : RunTargetName
+  }
+
+  interface IExtMonitorNotify {
+    +subscribe(on_notify : callback) : Result<void>
+    +latest() : optional<ProcessMonitorNotify>
+  }
+
+  class ProcessMonitorNotify {
+    +process_name : string
+    +process_group_name : string
+    +process_state : ProcessState
+    +pid : uint32
+    +exit_code : int32
+    +supervision_status : SupervisionStatus
+    +failed_supervision_type : FailedSupervisionType
+    +deadline_error : DeadlineError
+    +deadline_error_us : int64
+    +heartbeat_error : HeartbeatError
+    +logic_error : LogicError
+    +failed_supervision_cycles : uint32
+    +deadline_violation : bool
+    +alive_indication_count : uint32
+    +process_execution_error : uint32
+    +process_group_id : string
+    +recovery_state : string
+  }
+
+  note right of ProcessMonitorNotify
+    • Payload type for the external monitor notification capability
+    • process_name/process_group_name self-identify the subject
+      (callback registered once per LifecycleFieldBindings instance)
+    • Originates from PHM; delivered via IExtMonitorNotify mw::com event
+  end note
+
+  ProcessInfoNode --> ProcessState : getState()
+  ProcessMonitorNotify --> SupervisionStatus : supervision_status
+  ProcessMonitorNotify --> FailedSupervisionType : failed_supervision_type
+  ProcessMonitorNotify --> DeadlineError : deadline_error
+  ProcessMonitorNotify --> HeartbeatError : heartbeat_error
+  ProcessMonitorNotify --> LogicError : logic_error
+}
+
+LifecycleFieldBindings ..> ProcessState : reads (type only, via notification)
+LifecycleFieldBindings ..> GraphState : reads (type only, via notification)
+LifecycleFieldBindings ..> ProcessMonitorNotify : reads via notification
+LifecycleFieldBindings ..> ILmControl : pull (run_target via get_active_run_target)
+LifecycleFieldBindings ..> IExtMonitorNotify : push (subscribe for ProcessMonitorNotify)
+
+note bottom of LifecycleFieldBindings
+  • Pull (sync, public): ONLY run_target via ILmControl
+  • Push (all other fields): via IExtMonitorNotify as
+    ProcessMonitorNotify payload
+  • state/pid/graph_state NOT exposed via public API (internal
+    Launch Manager classes) -- only via push notification
+  • See lifecycle-collector-design.md Sec 2.4/6 for full boundary
+end note
+
+@enduml

@@ -1,7 +1,7 @@
 # 입력 스키마 구조 및 필수 필드
 
 > **관련:** FR-VEL-013 (입력 인터페이스 구성), STKH-VEL-013
-> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) — Vendor A NPU 런타임 상태의 표준 입력 인터페이스 정의.
+> **참조 예시:** [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) — Vendor A NPU 런타임 상태의 표준 입력 인터페이스 정의.
 
 ## 1. 목적
 
@@ -34,6 +34,7 @@ VEL 아키텍처에서 입력 계약은 구성 기반입니다. 각 소스(런�
   - `type` — 데이터 유형 (string, number, integer, uint64, boolean, enum 등).
   - `required` — 필드가 반드시 존재해야 하는지 여부.
   - 선택적 제약 조건: `range`, `allowedValues`, `pattern`, `minimum`, `maximum`.
+  - 선택적 `conversion` — [source-collector-interface-design.md Section 3.7](../../evidence-ingestion/source-collector-interface-design.md#37-필드-값-변환-공통-수집기-내부-구조) 참조. raw 값이 인터페이스별, 잠재적으로 개방형 값 집합(예: 향후 소스 릴리스에서 늘어날 수 있는 네이티브 enum)에서 비롯된 필드에 사용됩니다: 현재 알려진 raw 라벨에서 evidence 문자열 형태로의 `values` 맵과, 아직 그 맵에 없는 값에 대한 `unmappedValue`(기본값 `"unknown"`)를 선언합니다 — 인식되지 않은 raw 값은 거부되거나 그대로 보존되지 않고 해당 표준 문자열로 표시됩니다. **`conversion`을 사용하는 필드는 `type: enum`/`allowedValues`가 아닌 `type: string`으로 선언됩니다** — 언제 어느 것을 선호할지에 대해서는 아래 Section 3.5를 참조하십시오.
 - **추가 필드 정책** — 스키마에 선언되지 않은 필드에 대한 `reject` 또는 `allow`.
 
 입력 계약은 **검증기 중립적**입니다: 계약 형식은 특정 스키마 검증 엔진과 독립적입니다. 구체적인 검증기와 지원되는 제약 조건 유형은 배포 시 선택됩니다.
@@ -72,7 +73,7 @@ VEL 아키텍처에서 입력 계약은 구성 기반입니다. 각 소스(런�
 필드는 Schema Validator가 적용할 제약 조건을 선언할 수 있습니다:
 
 - `range: {minimum, maximum}` — 숫자 범위.
-- `allowedValues: [..]` — 열거된 값.
+- `allowedValues: [..]` — 열거된 값. **`type: enum`/`allowedValues`는 진정으로 폐쇄되고 VEL이 소유/제어하는 값 집합**(예: 고정 구성 선택)에만 예약하십시오. 값 집합이 외부의 인터페이스별 소스(상위 모듈의 네이티브 enum, 오류 코드 테이블 등)에 의해 정의되고 시간이 지나면서 새 멤버를 추가할 수 있는 필드의 경우, 대신 `type: string`과 `conversion` 블록(Section 3.3)을 선호하십시오 — 이렇게 하면 소스가 VEL 구성이 아직 인식하지 못하는 것을 도입하더라도 raw 레코드가 항상 유효하고 거부되지 않는 값을 전달할 수 있습니다.
 - `pattern` — 문자열의 정규식 패턴.
 - `required: true/false` — 존재 요구 사항.
 
@@ -137,4 +138,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-013, STKH-VEL-013 |
-| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |
+| 참조 예시 | [`vendor-a-npu-status-v1.2.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/schemas/vendor-a-npu-status-v1.2.0.yaml) |

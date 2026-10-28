@@ -100,11 +100,13 @@ S-CORE 모듈 상태는 표준 정규화 매핑을 사용하여 Vehicle Evidence
 
 ## 7. 구성 기반 소스 추가
 
-새 S-CORE 모듈을 VEL 소스로 추가하려면 표준 패턴에 따라 구성만 필요합니다:
+새 S-CORE 모듈을 VEL 소스로 추가하는 것은 **구성이 우선**이며, 제네릭 바인딩이 모듈의 네이티브 인터페이스에 도달할 수 없는 경우에만 독립적으로 로드된 플러그인이 사용됩니다:
 
-1. 모듈 상태에 대한 **입력 인터페이스 정의** (`RawEvidenceSchema`)를 정의합니다.
+1. 모듈 상태에 대한 **입력 인터페이스 정의** (`RawEvidenceSchema`)를 정의합니다. 인터페이스별 상태/오류 필드에는 `type: string`과 함께 `conversion` 블록을 사용합니다 (Section 5).
 2. 모듈 상태에 대한 **정규화 매핑** (`EvidenceNormalizationRule`)을 정의합니다.
-3. S-CORE API를 통해 모듈 상태를 읽는 **플랫폼별 수집기**를 구현합니다 (참조: [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md)).
+3. `fieldBindingProvider` 블록이 `kind: generic`(내장, 새 코드 없음) 또는 `kind: plugin`(공유 `PluginLoader`가 로드하는 독립적으로 빌드/배포된 바인딩 아티팩트; 참조: [source-collector-interface-design.md Section 3.6](../../evidence-ingestion/source-collector-interface-design.md#36-플러그인-검색-및-로딩) 및 Lifecycle 실현에 대한 [lifecycle-collector-design.md](../../evidence-ingestion/s-core-state-collection/collectors/lifecycle-collector-design.md))을 선택하는 **`VehicleEvidenceCollector`** 구성을 정의합니다.
+
+모듈별로 새로운 Mapper, Validator, Normalizer 또는 수집기 하위 클래스는 작성되지 않으며, VEL 코어는 하나를 추가하기 위해 수정되거나 다시 빌드되지 않습니다 — `ConfigDrivenStateMapper`, Schema Validator, Normalization Processor는 한 번만 구축되는 공유 설정 기반 인프라이며 (참조: [Collector_common_class_diagram.puml](../../../../features/diagrams/Collector_common_class_diagram.puml)), 모든 S-CORE 모듈 수집기가 변경 없이 재사용합니다.
 
 ![구성 기반 소스 추가](../../../../features/assets/Configuration_driven_source_addition.svg)
 

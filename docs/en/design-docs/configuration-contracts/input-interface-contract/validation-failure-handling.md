@@ -1,7 +1,7 @@
 # Validation Failure Handling for Invalid Source Records
 
 > **Related:** FR-VEL-013 (Input Interface Configuration), STKH-VEL-013
-> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` block
+> **Reference example:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` block
 
 ## 1. Purpose
 
@@ -69,6 +69,8 @@ spec:
 
 The diagnostic includes the failing source record identifier (`message_id`), the failure category, the offending field name, and a human-readable reason. This schema is shared with the audit logging design.
 
+> **Relationship to the Collector I/O-level `AdapterDiagnostic`:** This is the same `AdapterDiagnostic` kind used by the collector's I/O-level diagnostic reporting ([Source Collector Interface Design Section 5.2](../../evidence-ingestion/source-collector-interface-design.md#52-diagnostic-output)). That document's diagnostic covers failures at the collector `error_category` granularity (e.g. `SOURCE_UNAVAILABLE`, `TIMEOUT`, `SCHEMA_VIOLATION`); this section's `failureCategory` values are the finer-grained breakdown reported specifically under `error_category: SCHEMA_VIOLATION`, once a raw record exists and schema validation has run.
+
 ### 3.5 Invalid evidence vs. rejection
 
 Two distinct handling modes exist:
@@ -80,7 +82,11 @@ Diagnostics are **rate-limited and aggregated** to prevent flooding at high inva
 
 ## 4. Configuration Format
 
-### 4.1 Failure handling policy in the Input Interface Definition
+### 4.1 Failure Handling Policy and Schema Configuration
+
+Schema validation rules and constraints are declared in the `RawEvidenceSchema`, while the runtime handling policy for validation and transformation failures is configured in the corresponding `EvidenceNormalizationRule`'s `failureHandling` block:
+
+**RawEvidenceSchema (Declaring validation rules and constraints):**
 
 ```yaml
 apiVersion: score.dev/v1alpha1
@@ -93,16 +99,41 @@ spec:
   encoding: json
   messageType: VendorANpuStatus
   additionalFields: reject
-  failureHandling:
-    missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
-    invalidType: {result: reject, emitAdapterDiagnostic: true}
-    outOfRange: {result: reject, emitAdapterDiagnostic: true}
-    notAllowedValue: {result: emit-unknown, mappingQuality: unmapped}
-    patternMismatch: {result: reject, emitAdapterDiagnostic: true}
-    additionalFieldPresent: {result: reject, emitAdapterDiagnostic: true}
   fields:
     - {name: message_id, path: $.message_id, type: string, required: true}
-    # ... other fields
+    - {name: source_id, path: $.source_id, type: string, required: true}
+    - {name: workload_id, path: $.workload_id, type: string, required: true}
+    - {name: execution_id, path: $.execution_id, type: string, required: true}
+    - {name: resource_id, path: $.resource_id, type: string, required: true}
+    - {name: timestamp_ns, path: $.timestamp_ns, type: uint64, required: true}
+    - name: inference_latency_us
+      path: $.inference_latency_us
+      type: uint32
+      required: false
+      range: {minimum: 0, maximum: 10000000}
+    - name: device_state
+      path: $.device_state
+      type: uint8
+      required: true
+      allowedValues: [0, 1, 2, 3]
+    - {name: vendor_error_code, path: $.vendor_error_code, type: string, required: false}
+```
+
+**EvidenceNormalizationRule `failureHandling` (Configuring runtime failure outcomes):**
+
+```yaml
+apiVersion: score.dev/v1alpha1
+kind: EvidenceNormalizationRule
+metadata:
+  name: vendor-a-npu-to-score-evidence
+  version: 3.1.0
+spec:
+  # ... mappings and defaults ...
+  failureHandling:
+    missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
+    invalidValue: {result: emit-invalid-evidence, preserveOriginalValue: true}
+    unmappedEnum: {result: emit-unknown, mappingQuality: unmapped}
+    transformationError: {result: reject, emitAdapterDiagnostic: true}
 ```
 
 ### 4.2 Adapter diagnostic record (proposed shape)
@@ -133,4 +164,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-013, STKH-VEL-013 |
-| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` block |
+| Reference example | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` block |

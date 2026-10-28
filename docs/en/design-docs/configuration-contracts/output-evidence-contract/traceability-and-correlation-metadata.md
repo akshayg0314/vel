@@ -1,7 +1,7 @@
 # Traceability and Correlation Metadata Fields
 
 > **Related:** FR-VEL-006 (Source Identity Metadata), FR-VEL-007 (Observation Time Metadata), FR-VEL-008 (Correlation Metadata), STKH-VEL-006, STKH-VEL-007, STKH-VEL-008
-> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. Purpose
 
@@ -120,4 +120,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-006, FR-VEL-007, FR-VEL-008, STKH-VEL-006, STKH-VEL-007, STKH-VEL-008 |
-| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

@@ -8,22 +8,24 @@
 
 | Observable | S-CORE Source |
 | --- | --- |
-| Component state (idle/starting/running/terminating/terminated/failed) | `ProcessState` enum (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`) |
-| Run target (string name, e.g. "Startup", "Off", "Fallback") | `RunTargetConfig.name` (arbitrary string, not a fixed enum) |
-| Process group / dependency graph state | `GraphState` enum |
+| Component state (idle/starting/running/terminating/terminated/failed) | `ProcessState` enum (`lifecycle/score/launch_manager/src/daemon/src/process_group_manager/process_state.hpp`); delivered via the external monitor notification capability |
+| Run target (string name, e.g. "Startup", "Off", "Fallback") | `RunTargetConfig.name` (arbitrary string, not a fixed enum); read synchronously via `ILmControl::get_active_run_target()` |
+| Process group / dependency graph state | `GraphState` enum; delivered via the external monitor notification capability |
 | Process group identity | `IdentifierHash` (string-backed; see Section 2 note) |
-| Process exit code, PID | Launch Manager external monitor notification |
+| Process exit code | Launch Manager external monitor notification |
+| Process PID | Launch Manager external monitor notification |
 | Health Monitor supervision status | Deadline / logic / heartbeat monitor status, aggregated (VEL-derived) |
 | Recovery state | `recovery_state_` — hardcoded `IdentifierHash("fallback")` (fallback run target name) |
 
-**S-CORE API used by the VEL collector:** Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`).
+**S-CORE API used by the VEL collector:** `ILmControl::get_active_run_target()` for `run_target` (the only synchronous/pull field), and the Launch Manager external monitor notification (`comp_req__launch_man__ext_monitor_notify`) for every other field (state, pid, graph_state, exit_code, process_execution_error, process_group_id, recovery_state, supervision fields).
 
-> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. All lifecycle fields — including `pid`, `exit_code`, and `process_execution_error` — are exposed through `comp_req__launch_man__ext_monitor_notify`. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
+> **Accessibility note:** VEL can only collect data exposed through a stable, public, external-facing API. `run_target` is exposed via `ILmControl::get_active_run_target()`. `state`, `pid`, `graph_state`, `exit_code`, `process_execution_error`, `process_group_id`, `recovery_state`, and all Health Monitor supervision fields are exposed through `comp_req__launch_man__ext_monitor_notify`. `ProcessInfoNode` and `Graph` are Launch Manager daemon-internal classes, not reachable from an external VEL process. See the S-CORE module collector API design in the evidence-ingestion documentation for the full accessibility boundary.
 
 ## 2. Source-Specific Notes
 
+
 - **`process_group_id` is `string`, not `uint32`.** It is an `IdentifierHash` (`lifecycle/score/launch_manager/src/daemon/src/common/identifier_hash.hpp`), which wraps a string-derived identifier, not a numeric handle.
-- **`previous_state` is `enum`, not `string`.** It uses the same `allowedValues` as `state` (both are `ProcessState`).
+- **`state` and `previous_state` are `string`, not `enum`.** Both observe the same `ProcessState` native enum and share the same `conversion.values` map, but VEL does not own a closed value set for them; an unrecognized raw value is surfaced as the canonical string `"unknown"` (`unmappedValue: unknown`). The same applies to `graph_state`, `supervision_status`, `failed_supervision_type`, `deadline_error`, `heartbeat_error`, and `logic_error`. The upstream S-CORE enums are unchanged; conversion happens at the binding boundary, declared in configuration and executed by the shared `ConfigDrivenStateMapper`.
 - **`run_target` is `string`, not a constrained enum.** `RunTargetConfig.name` (`config.hpp`) is an arbitrary string (e.g. "Startup", "Off", "Fallback", "Running", "SafeState"). Run target names are integrator-defined, not a fixed `[debug, production, test]` set.
 - **`recovery_state` is `string`, not a recovery process state machine.** The source defines `recovery_state_` as a hardcoded `const IdentifierHash recovery_state_{"fallback"}` (`process_group_manager.hpp`). It represents the fallback run target name, not an `[idle, timeout, sending, waiting_for_response]` state machine. The recovery mechanism is a simple `sendRecoveryRequest` → `handleRecoveryRequest` → transition to the fallback run target.
 - **`recovery_action` is intentionally not part of this schema.** The source defines two distinct config structs (`RestartAction`, `SwitchRunTargetAction` in `recovery_action_config.hpp`) used in different optional config slots (`ready_recovery_action` / `recovery_action`), not a single tagged union/enum. Only `recovery_state` (the fallback run target name) is currently collected.
@@ -80,7 +82,7 @@ The canonical, authoritative artifacts are maintained in the interface package (
 
 Key points about the schema (verified against source):
 
-- `state` / `previous_state`: `enum`, values `[idle, starting, running, terminating, terminated, failed]` (matches `ProcessState`).
+- `state` / `previous_state`: `string` with an `enumMap` `conversion` (known native labels `kIdle`..`kFailed` map to `idle, starting, running, terminating, terminated, failed`; unrecognized values map to the canonical string `"unknown"` via `unmappedValue`).
 - `process_group_id`: `string` (see Section 2).
 - `run_target`: `string` (see Section 2) — arbitrary run target name, not a fixed enum.
 - `recovery_state`: `string` (see Section 2) — the fallback run target name (`"fallback"`), not a recovery state machine.

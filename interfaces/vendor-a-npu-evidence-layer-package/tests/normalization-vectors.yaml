@@ -71,4 +71,4 @@ tests:
       device_state: 1
     expect:
       rejected: true
-      adapterDiagnostic: MANDATORY_FIELD_MISSING
+      adapterDiagnostic: missingRequiredField

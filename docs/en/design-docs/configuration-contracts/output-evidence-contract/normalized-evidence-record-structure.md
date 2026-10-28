@@ -1,7 +1,7 @@
 # Normalized Evidence Record Structure
 
 > **Related:** FR-VEL-004 (Vehicle Evidence), FR-VEL-011 (Evidence Publication), FR-VEL-014 (Output Evidence Configuration), STKH-VEL-001, STKH-VEL-011, STKH-VEL-014
-> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+> **Reference example:** [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ## 1. Purpose
 
@@ -17,7 +17,7 @@ In the VEL architecture, the output evidence contract is configuration-driven. I
 
 The output evidence contract uses the `NormalizedEvidenceSchema` kind, mirroring the reference example:
 
-- [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
+- [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml)
 
 ### 3.2 Record structure
 
@@ -34,7 +34,7 @@ Each normalized Vehicle Evidence record MUST conform to the Output Evidence Defi
 
 ### 3.3 Section details
 
-- **header** — contains `evidenceId`, a UUID (v4) that uniquely identifies the evidence record. It is generated as a UUID (v4), which is universally unique, requires no coordination, and supports distributed collectors.
+- **header** — contains `evidenceId` (a UUID v4 that uniquely identifies the evidence record), `schemaVersion` (the version of the normalized evidence schema), `evidenceType` (the dot-delimited type identifier for the evidence observation), and `evidenceDomain` (the domain identifier, e.g. `s-core`, `accelerator`).
 - **identity** — contains `sourceId`, `workloadId`, `executionInstanceId`, `resourceId`, and `correlationId`.
 - **observation** — may be value-based, state-based, or both. **At least one observation field MUST be populated** for a record to be meaningful evidence.
 - **time** — contains `eventTimestampNs` and `clockDomain`.
@@ -61,11 +61,19 @@ spec:
   requiredSections: [header, identity, observation, time, quality, traceability]
   fields:
     - {path: $.header.evidenceId, type: string, required: true}
+    - {path: $.header.schemaVersion, type: string, required: true}
+    - {path: $.header.evidenceType, type: string, required: true}
+    - {path: $.header.evidenceDomain, type: string, required: true}
     - {path: $.identity.sourceId, type: string, required: true}
     - {path: $.identity.workloadId, type: string, required: true}
     - {path: $.identity.executionInstanceId, type: string, required: true}
     - {path: $.identity.resourceId, type: string, required: true}
     - {path: $.identity.correlationId, type: string, required: true}
+    - {path: $.observation.value, type: number, required: false}
+    - {path: $.observation.unit, type: string, required: false}
+    - {path: $.observation.state, type: string, required: false}
+    - {path: $.observation.normalizedClass, type: string, required: false}
+    - {path: $.observation.originalValue, type: string, required: false}
     - {path: $.time.eventTimestampNs, type: uint64, required: true}
     - {path: $.time.clockDomain, type: string, required: true}
     - {path: $.quality.validity, type: enum, values: [valid, invalid, unknown], required: true}
@@ -82,7 +90,10 @@ spec:
 ```json
 {
   "header": {
-    "evidenceId": "550e8400-e29b-41d4-a716-446655440000"
+    "evidenceId": "550e8400-e29b-41d4-a716-446655440000",
+    "schemaVersion": "1.0.0",
+    "evidenceType": "workload.execution.latency",
+    "evidenceDomain": "accelerator"
   },
   "identity": {
     "sourceId": "vendor-a-npu",
@@ -117,7 +128,9 @@ spec:
 
 - Every normalized Vehicle Evidence record MUST conform to the Output Evidence Definition.
 - The `requiredSections` list defines the mandatory top-level sections. Deployments MUST NOT add deployment-specific sections beyond the six canonical sections (`header`, `identity`, `observation`, `time`, `quality`, `traceability`).
-- The `header.evidenceId` uniquely identifies the evidence record. It is generated as a **UUID (v4)**, which is universally unique, requires no coordination, and supports distributed collectors.
+- The `header.evidenceId` uniquely identifies the evidence record. It is generated as a **UUID (v4)** by the Normalization Processor at runtime, which is universally unique, requires no coordination, and supports distributed collectors. It is not derived from any source field and is not declared in `EvidenceNormalizationRule` mappings.
+- The `header.schemaVersion` is populated by the Normalization Processor from the `metadata.version` of the `NormalizedEvidenceSchema` (output schema) that the record conforms to. It is not declared in `EvidenceNormalizationRule` mappings because it is an output-contract property, not a source-derived value.
+- Together with `header.evidenceType` (set per evidence mapping) and `header.evidenceDomain` (set via `defaults.evidenceDomain`), the `header` section is fully populated by the Normalization Processor: `evidenceType` and `evidenceDomain` come from the mapping configuration, while `evidenceId` and `schemaVersion` are processor-generated.
 - The `observation` section may be value-based, state-based, or both. **At least one observation field MUST be populated** for a record to be meaningful evidence.
 - The aggregation data format is `json`.
 
@@ -126,4 +139,4 @@ spec:
 | Item | Reference |
 | --- | --- |
 | Requirements | FR-VEL-004, FR-VEL-011, FR-VEL-014, STKH-VEL-001, STKH-VEL-011, STKH-VEL-014 |
-| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |
+| Reference example | [`score-normalized-evidence-v1.0.0.yaml`](../../../../../interfaces/vel-output-evidence-package/schemas/score-normalized-evidence-v1.0.0.yaml) |

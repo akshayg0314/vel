@@ -1,7 +1,7 @@
 # 잘못된 소스 레코드의 검증 실패 처리
 
 > **관련:** FR-VEL-013 (입력 인터페이스 구성), STKH-VEL-013
-> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` 블록
+> **참조 예시:** [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` 블록
 
 ## 1. 목적
 
@@ -69,6 +69,8 @@ spec:
 
 진단에는 실패한 소스 레코드 식별자(`message_id`), 실패 범주, 문제 필드 이름, 사람이 읽을 수 있는 이유가 포함됩니다. 이 스키마는 감사 로깅 설계와 공유됩니다.
 
+> **수집기 I/O 수준 `AdapterDiagnostic`과의 관계:** 이는 수집기의 I/O 수준 진단 보고에서 사용되는 것과 동일한 `AdapterDiagnostic` 종류입니다 ([Source Collector 인터페이스 설계 Section 5.2](../../evidence-ingestion/source-collector-interface-design.md#52-진단-출력)). 해당 문서의 진단은 수집기 `error_category` 세분성(예: `SOURCE_UNAVAILABLE`, `TIMEOUT`, `SCHEMA_VIOLATION`)의 실패를 다룹니다; 이 섹션의 `failureCategory` 값은 raw 레코드가 존재하고 스키마 검증이 실행된 후 `error_category: SCHEMA_VIOLATION` 하에서 구체적으로 보고되는 더 세분화된 분류입니다.
+
 ### 3.5 잘못된 evidence vs. 거부
 
 두 가지 별개의 처리 모드가 존재합니다:
@@ -80,8 +82,12 @@ spec:
 
 ## 4. 구성 형식
 
-### 4.1 입력 인터페이스 정의의 실패 처리 정책
-
+### 4.1 실패 처리 정책 및 스키마 구성
+ 
+스키마 검증 규칙 및 제약 조건은 `RawEvidenceSchema`에 선언되며, 검증 및 변환 실패에 대한 런타임 처리 정책은 해당 `EvidenceNormalizationRule`의 `failureHandling` 블록에 구성됩니다:
+ 
+**RawEvidenceSchema (검증 규칙 및 제약 조건 선언):**
+ 
 ```yaml
 apiVersion: score.dev/v1alpha1
 kind: RawEvidenceSchema
@@ -93,16 +99,41 @@ spec:
   encoding: json
   messageType: VendorANpuStatus
   additionalFields: reject
-  failureHandling:
-    missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
-    invalidType: {result: reject, emitAdapterDiagnostic: true}
-    outOfRange: {result: reject, emitAdapterDiagnostic: true}
-    notAllowedValue: {result: emit-unknown, mappingQuality: unmapped}
-    patternMismatch: {result: reject, emitAdapterDiagnostic: true}
-    additionalFieldPresent: {result: reject, emitAdapterDiagnostic: true}
   fields:
     - {name: message_id, path: $.message_id, type: string, required: true}
-    # ... 기타 필드
+    - {name: source_id, path: $.source_id, type: string, required: true}
+    - {name: workload_id, path: $.workload_id, type: string, required: true}
+    - {name: execution_id, path: $.execution_id, type: string, required: true}
+    - {name: resource_id, path: $.resource_id, type: string, required: true}
+    - {name: timestamp_ns, path: $.timestamp_ns, type: uint64, required: true}
+    - name: inference_latency_us
+      path: $.inference_latency_us
+      type: uint32
+      required: false
+      range: {minimum: 0, maximum: 10000000}
+    - name: device_state
+      path: $.device_state
+      type: uint8
+      required: true
+      allowedValues: [0, 1, 2, 3]
+    - {name: vendor_error_code, path: $.vendor_error_code, type: string, required: false}
+```
+ 
+**EvidenceNormalizationRule `failureHandling` (런타임 실패 결과 구성):**
+ 
+```yaml
+apiVersion: score.dev/v1alpha1
+kind: EvidenceNormalizationRule
+metadata:
+  name: vendor-a-npu-to-score-evidence
+  version: 3.1.0
+spec:
+  # ... mappings and defaults ...
+  failureHandling:
+    missingRequiredField: {result: reject, emitAdapterDiagnostic: true}
+    invalidValue: {result: emit-invalid-evidence, preserveOriginalValue: true}
+    unmappedEnum: {result: emit-unknown, mappingQuality: unmapped}
+    transformationError: {result: reject, emitAdapterDiagnostic: true}
 ```
 
 ### 4.2 어댑터 진단 레코드 (제안된 형태)
@@ -133,4 +164,4 @@ spec:
 | 항목 | 참조 |
 | --- | --- |
 | 요구사항 | FR-VEL-013, STKH-VEL-013 |
-| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` 블록 |
+| 참조 예시 | [`vendor-a-npu-to-evidence-v3.1.0.yaml`](../../../../../interfaces/vendor-a-npu-evidence-layer-package/mappings/vendor-a-npu-to-evidence-v3.1.0.yaml) `failureHandling` 블록 |
